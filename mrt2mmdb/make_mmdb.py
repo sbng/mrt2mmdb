@@ -18,14 +18,14 @@ parser.add_argument(
     type=str,
     help="Filename of mrt dump",
     nargs="?",
-    default="mrt-dump.ams.202402171710.gz",
+    default="../data/mrt-dump.ams.202402171710.gz",
 )
 parser.add_argument(
     "--mmdb",
     type=str,
     help="Filename of Maxmind mmdb file for prefixes lookup and return description/ASN",
     nargs="?",
-    default="GeoLite2-ASN.mmdb",
+    default="../data/GeoLite2-ASN.mmdb",
 )
 parser.add_argument(
     "--target",

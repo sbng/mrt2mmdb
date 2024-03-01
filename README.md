@@ -1,5 +1,5 @@
 # mrt2mmdb
-Convert a mrt file into a maxmind database file 
+Convert a [mrt](https://datatracker.ietf.org/doc/html/rfc6396) file into a [maxmind](https://maxmind.github.io/MaxMind-DB) database file.
 
 ## Installation
 ```

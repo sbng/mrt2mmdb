@@ -50,9 +50,10 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-if (not(os.path.isfile(args.mrt))) or (not(os.path.isfile(args.mmdb))):
+if (not (os.path.isfile(args.mrt))) or (not (os.path.isfile(args.mmdb))):
     parser.print_help(sys.stderr)
     sys.exit(1)
+
 
 def make_asn(fname):
     """

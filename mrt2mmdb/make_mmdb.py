@@ -1,17 +1,19 @@
 #!/usr/bin/env python
-
+"""
+This module convert a mrt to mmdb format. This conversion also enrich the
+new mmdb file with network description whereby a more rich and complete 
+information can be obtained from a routing prefix.
+"""
 import os
 import sys
 import argparse
-import maxminddb
-import mrtparse
 import subprocess
-import multiprocessing
 import itertools
 from netaddr import IPSet, IPNetwork
 from mmdb_writer import MMDBWriter
-from ipaddress import ip_address, IPv4Address
 from tqdm import tqdm
+import maxminddb
+import mrtparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -22,6 +24,7 @@ parser.add_argument(
     default="../data/mrt-dump.ams.202402171710.gz",
 )
 parser.add_argument(
+    # pylint: disable=duplicate-code
     "--mmdb",
     type=str,
     help="Filename of Maxmind mmdb file for prefixes lookup and return description/ASN",
@@ -50,7 +53,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-if (not (os.path.isfile(args.mrt))) or (not (os.path.isfile(args.mmdb))):
+if not (os.path.isfile(args.mrt)) or not os.path.isfile(args.mmdb):
     parser.print_help(sys.stderr)
     sys.exit(1)
 
@@ -65,31 +68,34 @@ def make_asn(fname):
     Workflow: Iterate over the mmdb entries to create the desire dictionary
     """
     asn = {}
+    message = "Making ASN table for description lookup"
     with maxminddb.open_database(fname) as mreader:
         with tqdm(
-            desc="{:<40}".format("Making ASN table for description lookup"),
+            desc=f" {message:<40}  ",
             unit=" prefixes",
             disable=args.quiet,
         ) as pb:
             for prefix, data in mreader:
                 try:
+                    del prefix
                     asn[str(data["autonomous_system_number"])] = data[
                         "autonomous_system_organization"
                     ]
                     pb.update(1)
-                except:
+                except KeyError:
                     pass
     return asn
 
 
 def make_dict(i, result):
     """
-    Input: One mrt entry and a aggregated entries (result). This aggregated entries (dictionary)
-           allow quick lookup of a prefix (key) and fetch the values (AS_PATH and the prefix).
+    Input: One mrt entry and a aggregated entries (result). This aggregated entries
+           (dictionary) allow quick lookup of a prefix (key) and fetch the values
+           (AS_PATH and the prefix).
     Output: Aggregated mrt entries in dictionary (prefix-> AS_PATH/PREFIX)
-    Workflow: Check the mmrt entry for "rib_entries" as this branch contains the required routing
-              information such as AS_PATH. This information are used to forma mrt entry in dictionary
-              then return back to the caller.
+    Workflow: Check the mmrt entry for "rib_entries" as this branch contains the
+              required routing information such as AS_PATH. This information are
+              used to forma mrt entry in dictionary then return back to the caller.
     """
     if ("rib_entries" in i.data) and (
         len(i.data["rib_entries"][0]["path_attributes"][1]["value"]) > 0
@@ -109,11 +115,11 @@ def load_mrt(fname):
               form the output dictionary
     """
     num = args.prefixes
-    pool = multiprocessing.Pool(os.cpu_count())
     result = {}
     mrt = mrtparse.Reader(fname)
+    message = "Loading mrt data into dictionary"
     with tqdm(
-        desc="{:<40}".format("Loading mrt data"),
+        desc=f" {message:<40}  ",
         unit=" prefixes",
         disable=args.quiet,
     ) as pb:
@@ -142,8 +148,9 @@ def convert_mrt_mmdb(fname, mrt, asn):
     """
     missing = []
     writer = MMDBWriter(ip_version=6, ipv4_compatible=True)
+    message = "Converting mrt into mmda"
     with tqdm(
-        desc="{:<40}".format("Converting mrt data into mmdb"),
+        desc=f" {message:<40}  ",
         unit=" prefixes",
         disable=args.quiet,
     ) as pb:
@@ -173,16 +180,25 @@ def load_bgpscanner(fname):
     process to speed up the mrt loading process
     """
     result = subprocess.run(
-        ["/home/sbng/bin/bgpscanner", fname], stdout=subprocess.PIPE, text=True
+        ["/home/sbng/bin/bgpscanner", fname],
+        stdout=subprocess.PIPE,
+        text=True,
+        check=True,
     )
     new = result.stdout.split("=")
-    return
+    print(new)
 
 
 def main():
+    """
+    main function define the workflow to make a ASN dict->Load the
+    corresponding mrt->convert the mrt into mmda
+    """
     asn = make_asn(args.mmdb)
     prefixes_mrt = load_mrt(args.mrt)
     missing = convert_mrt_mmdb(args.target, prefixes_mrt, asn)
+    message = "Prefixes without description"
+    print(f" {message:<40}  :", len(missing), " prefixes")
     return 0
 
 

@@ -1,14 +1,11 @@
 #!/usr/bin/env python
-
+"""
+utility to help lookup on description of network base on IP address or ASN
+"""
 import os
 import sys
 import argparse
 import maxminddb
-import mrtparse
-import subprocess
-import multiprocessing
-from netaddr import IPSet, IPNetwork
-from ipaddress import ip_address, IPv4Address
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -31,31 +28,40 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-if (not (os.path.isfile(args.mmdb))):
+if not os.path.isfile(args.mmdb):
     parser.print_help(sys.stderr)
     sys.exit(1)
 
+
 def lookup(fname, ipadd):
+    """
+    lookup base on IP address. The description is returned.
+    """
     with maxminddb.open_database(fname) as mreader:
         return mreader.get(ipadd)
 
 
 def lookup_asn(fname, asn):
+    """
+    lookup base on ASN. The description is returned.
+    """
+    result = {}
     with maxminddb.open_database(fname) as mreader:
         for prefix, data in mreader:
             try:
+                del prefix
                 if str(data["autonomous_system_number"]) == asn:
-                    return data
-            except:
-                pass
-
-    pool = multiprocessing.Pool(os.cpu_count())
-    mrt = mrtparse.Reader(fname)
-    print(fname, ipadd)
-    return
+                    result = data
+            except KeyError:
+                print("ASN not found")
+                result = {}
+    return result
 
 
 def main():
+    """
+    main function for the workflow
+    """
     if (args.ipaddress != "") and (args.mrt == ""):
         print(lookup(args.mmdb, args.ipaddress))
     if (args.asn != "") and (args.mrt == ""):

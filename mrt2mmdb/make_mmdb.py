@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import os
-from tqdm import tqdm
+import sys
 import argparse
 import maxminddb
 import mrtparse
@@ -11,6 +11,7 @@ import itertools
 from netaddr import IPSet, IPNetwork
 from mmdb_writer import MMDBWriter
 from ipaddress import ip_address, IPv4Address
+from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -49,6 +50,9 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
+if (not(os.path.isfile(args.mrt))) or (not(os.path.isfile(args.mmdb))):
+    parser.print_help(sys.stderr)
+    sys.exit(1)
 
 def make_asn(fname):
     """

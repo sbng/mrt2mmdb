@@ -4,32 +4,13 @@ utility to help lookup on description of network base on IP address or ASN
 """
 import os
 import sys
-import argparse
 import maxminddb
+from args import get_args
 
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "--mmdb",
-    type=str,
-    help="Filename of Maxmind mmdb file for prefixes lookup and return description/ASN",
-    nargs="?",
-    default="GeoLite2-ASN.mmdb",
-)
-parser.add_argument(
-    "--ipaddress", type=str, help="IP address lookup", nargs="?", default=""
-)
-parser.add_argument("--asn", type=str, help="ASN lookup", nargs="?", default="")
-parser.add_argument(
-    "--mrt",
-    type=str,
-    help="Lookup using MRT file instead of mmdb",
-    nargs="?",
-    default="",
-)
-args = parser.parse_args()
+args = get_args(mmdb=True, ipaddress=True, asn=True)
 
 if not os.path.isfile(args.mmdb):
-    parser.print_help(sys.stderr)
+    args.print_help(sys.stderr)
     sys.exit(1)
 
 
@@ -62,9 +43,9 @@ def main():
     """
     main function for the workflow
     """
-    if (args.ipaddress != "") and (args.mrt == ""):
+    if args.ipaddress != "":
         print(lookup(args.mmdb, args.ipaddress))
-    if (args.asn != "") and (args.mrt == ""):
+    if args.asn != "":
         print(lookup_asn(args.mmdb, args.asn))
 
 

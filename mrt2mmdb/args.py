@@ -59,7 +59,6 @@ def get_args(
     if quiet:
         parser.add_argument(
             "--quiet",
-            metavar="",
             action="store_true",
             help="Turn off verbose (default:verbose)",
             default=False,
@@ -81,7 +80,13 @@ def main():
     corresponding mrt->convert the mrt into mmda
     """
     args = get_args(
-        mrt=True, mmdb=True, target=True, prefix=True, ipaddress=True, asn=True
+        mrt=True,
+        mmdb=True,
+        target=True,
+        prefix=True,
+        ipaddress=True,
+        asn=True,
+        quiet=True,
     )
     print(args)
     return 0

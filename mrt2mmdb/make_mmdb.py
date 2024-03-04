@@ -6,7 +6,6 @@ information can be obtained from a routing prefix.
 """
 import os
 import sys
-import argparse
 import subprocess
 import itertools
 from netaddr import IPSet, IPNetwork
@@ -14,47 +13,12 @@ from mmdb_writer import MMDBWriter
 from tqdm import tqdm
 import maxminddb
 import mrtparse
+from args import get_args
 
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "--mrt",
-    type=str,
-    help="Filename of mrt dump",
-    nargs="?",
-    default="../data/mrt-dump.ams.202402171710.gz",
-)
-parser.add_argument(
-    # pylint: disable=duplicate-code
-    "--mmdb",
-    type=str,
-    help="Filename of Maxmind mmdb file for prefixes lookup and return description/ASN",
-    nargs="?",
-    default="../data/GeoLite2-ASN.mmdb",
-)
-parser.add_argument(
-    "--target",
-    type=str,
-    help="Filename of new target mmdb file generated from mmrt file",
-    nargs="?",
-    default="out.mmdb",
-)
-parser.add_argument(
-    "--prefixes",
-    type=int,
-    help="Number of prefixes to process in mrt file (default:all)",
-    nargs="?",
-    default=None,
-)
-parser.add_argument(
-    "--quiet",
-    action="store_true",
-    help="Turn off verbose (default:verbose)",
-    default=False,
-)
-args = parser.parse_args()
+args = get_args(mrt=True, mmdb=True, prefix=True, target=True, quiet=True)
 
 if not (os.path.isfile(args.mrt)) or not os.path.isfile(args.mmdb):
-    parser.print_help(sys.stderr)
+    args.print_help(sys.stderr)
     sys.exit(1)
 
 

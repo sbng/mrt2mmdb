@@ -27,13 +27,13 @@ def lookup_asn(fname, asn):
     """
     lookup base on ASN. The description is returned.
     """
-    result = {}
+    result = []
     with maxminddb.open_database(fname) as mreader:
         for prefix, data in mreader:
             try:
                 del prefix
                 if str(data["autonomous_system_number"]) == asn:
-                    result = data
+                    result.append(data)
             except KeyError:
                 print("ASN not found")
                 result = {}
@@ -45,9 +45,9 @@ def main():
     main function for the workflow
     """
     if args.ipaddress != "":
-        print(json.dumps(lookup(args.mmdb, args.ipaddress)))
+        print(json.dumps(lookup(args.mmdb, args.ipaddress), indent=1))
     if args.asn != "":
-        print(json.dumps(lookup_asn(args.mmdb, args.asn)))
+        print(json.dumps(lookup_asn(args.mmdb, args.asn), indent=1))
 
 
 if __name__ == "__main__":

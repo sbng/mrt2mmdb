@@ -4,6 +4,6 @@ Convert a [mrt](https://datatracker.ietf.org/doc/html/rfc6396) file into a [maxm
 ## Installation
 ```
 git clone https://github.com/sbng/mrt2mmdb.git
-cd mrt2mmda
+cd mrt2mmdb
 pip install -e .
 ```

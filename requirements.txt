@@ -2,6 +2,4 @@ maxminddb==2.5.2
 mmdb_writer==0.1.1
 mrtparse==2.2.0
 netaddr==0.8.0
-setuptools==69.1.1
 tqdm==4.65.0
-pre-commit==3.6.2

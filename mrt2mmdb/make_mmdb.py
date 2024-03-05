@@ -127,7 +127,7 @@ def convert_mrt_mmdb(fname, mrt, asn):
             writer.insert_network(
                 IPSet(IPNetwork(prefix)),
                 {
-                    "autonomous_system_number": str(str(val[0][-1])),
+                    "autonomous_system_number": int(val[0][-1]),
                     "autonomous_system_organization": org_desc,
                     "organization": str(prefix),
                     "isp": " ".join(val[0]),

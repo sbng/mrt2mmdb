@@ -4,6 +4,7 @@ utility to help lookup on description of network base on IP address or ASN
 """
 import os
 import sys
+import json
 import maxminddb
 from args import get_args
 
@@ -44,9 +45,9 @@ def main():
     main function for the workflow
     """
     if args.ipaddress != "":
-        print(lookup(args.mmdb, args.ipaddress))
+        print(json.dumps(lookup(args.mmdb, args.ipaddress)))
     if args.asn != "":
-        print(lookup_asn(args.mmdb, args.asn))
+        print(json.dumps(lookup_asn(args.mmdb, args.asn)))
 
 
 if __name__ == "__main__":

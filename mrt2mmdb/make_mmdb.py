@@ -8,6 +8,8 @@ import os
 import sys
 import subprocess
 import itertools
+import time
+from functools import wraps
 from netaddr import IPSet, IPNetwork
 from mmdb_writer import MMDBWriter
 from tqdm import tqdm
@@ -22,6 +24,29 @@ if not (os.path.isfile(args.mrt)) or not os.path.isfile(args.mmdb):
     sys.exit(1)
 
 
+def timeit(func):
+    """
+    measure the performance of each function call. The function needs to return a counter in order
+    to determine the prefix/second value. This statistics would then be returned to the caller.
+    """
+
+    @wraps(func)
+    def timeit_wrapper(*listargs, **kwargs):
+        """
+        decorate the calling function by adding a start stop timer. Obtain the counter and return
+        all these stats.
+        """
+        start_time = time.perf_counter()
+        result, count = func(*listargs, **kwargs)
+        end_time = time.perf_counter()
+        total_time = end_time - start_time
+        stats = (count, total_time)
+        return result, stats
+
+    return timeit_wrapper
+
+
+@timeit
 def make_asn(fname):
     """
     Input:  A complete mmdb file that contains prefixes with ASN and description
@@ -32,6 +57,7 @@ def make_asn(fname):
     Workflow: Iterate over the mmdb entries to create the desire dictionary
     """
     asn = {}
+    count = 0
     message = "Making ASN table for description lookup"
     with maxminddb.open_database(fname) as mreader:
         with tqdm(
@@ -46,9 +72,10 @@ def make_asn(fname):
                         "autonomous_system_organization"
                     ]
                     pb.update(1)
+                    count += 1
                 except KeyError:
                     pass
-    return asn
+    return asn, count
 
 
 def make_dict(i, result):
@@ -70,6 +97,7 @@ def make_dict(i, result):
     return result
 
 
+@timeit
 def load_mrt(fname):
     """
     Input: file of the mrt file.
@@ -79,6 +107,7 @@ def load_mrt(fname):
               form the output dictionary
     """
     num = args.prefixes
+    count = 0
     result = {}
     mrt = mrtparse.Reader(fname)
     message = "Loading mrt data into dictionary"
@@ -90,9 +119,11 @@ def load_mrt(fname):
         for i in itertools.islice(mrt, num):
             result = make_dict(i, result)
             pb.update(1)
-    return result
+            count += 1
+    return result, count
 
 
+@timeit
 def convert_mrt_mmdb(fname, mrt, asn):
     """
     Input: Filename of the target mmdb file.
@@ -112,6 +143,7 @@ def convert_mrt_mmdb(fname, mrt, asn):
     """
     missing = []
     writer = MMDBWriter(ip_version=6, ipv4_compatible=True)
+    count = 0
     message = "Converting mrt into mmda"
     with tqdm(
         desc=f" {message:<40}  ",
@@ -134,8 +166,9 @@ def convert_mrt_mmdb(fname, mrt, asn):
                 },
             )
             pb.update(1)
+            count += 1
         writer.to_db_file(fname)
-    return missing
+    return missing, count
 
 
 def load_bgpscanner(fname):
@@ -158,11 +191,12 @@ def main():
     main function define the workflow to make a ASN dict->Load the
     corresponding mrt->convert the mrt into mmda
     """
-    asn = make_asn(args.mmdb)
-    prefixes_mrt = load_mrt(args.mrt)
-    missing = convert_mrt_mmdb(args.target, prefixes_mrt, asn)
+    asn, asn_stats = make_asn(args.mmdb)
+    prefixes_mrt, prefix_stats = load_mrt(args.mrt)
+    missing, convert_stats = convert_mrt_mmdb(args.target, prefixes_mrt, asn)
     message = "Prefixes without description"
     print(f" {message:<40}  :", len(missing), " prefixes")
+    del asn_stats, prefix_stats, convert_stats
     return 0
 
 

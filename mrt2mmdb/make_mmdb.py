@@ -93,6 +93,14 @@ def make_dict(i, result):
     ):
         prefix = str(i.data["prefix"]) + "/" + str(i.data["length"])
         aspath = i.data["rib_entries"][0]["path_attributes"][1]["value"][0]["value"]
+        # If as-set exist, add as-set to the aspath
+        try:
+            aspath = (
+                aspath
+                + i.data["rib_entries"][0]["path_attributes"][1]["value"][1]["value"]
+            )
+        except IndexError:
+            pass
         result[prefix] = [aspath, prefix]
     return result
 

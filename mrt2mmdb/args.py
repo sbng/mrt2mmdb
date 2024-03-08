@@ -30,7 +30,7 @@ def get_args(
             metavar="",
             type=str,
             help="Filename of mrt dump",
-            default="../data/mrt-dump.ams.202402171710.gz",
+            default="data/mrt-dump.ams.202402171710.gz",
         )
     if mmdb:
         parser.add_argument(
@@ -38,7 +38,7 @@ def get_args(
             metavar="",
             type=str,
             help="Filename of Maxmind mmdb file for prefixes lookup and return description/ASN",
-            default="../data/GeoLite2-ASN.mmdb",
+            default="data/GeoLite2-ASN.mmdb",
         )
     if target:
         parser.add_argument(

@@ -6,7 +6,8 @@ information can be obtained from a routing prefix.
 """
 import os
 import sys
-import subprocess
+
+# import subprocess
 import itertools
 import time
 from functools import wraps
@@ -16,6 +17,8 @@ from tqdm import tqdm
 import maxminddb
 import mrtparse
 from args import get_args
+
+# from bgpscanner import bgpscanner
 
 args = get_args(mrt=True, mmdb=True, prefix=True, target=True, quiet=True)
 
@@ -117,13 +120,14 @@ def load_mrt(fname):
     num = args.prefixes
     count = 0
     result = {}
-    mrt = mrtparse.Reader(fname)
     message = "Loading mrt data into dictionary"
     with tqdm(
         desc=f" {message:<40}  ",
         unit=" prefixes",
         disable=args.quiet,
     ) as pb:
+        #        result, count = bgpscanner(fname, pb, result)
+        mrt = mrtparse.Reader(fname)
         for i in itertools.islice(mrt, num):
             result = make_dict(i, result)
             pb.update(1)
@@ -179,21 +183,6 @@ def convert_mrt_mmdb(fname, mrt, asn):
     return missing, count
 
 
-def load_bgpscanner(fname):
-    """
-    For future optimization and improvement using bgpscanner external
-    process to speed up the mrt loading process
-    """
-    result = subprocess.run(
-        ["/home/sbng/bin/bgpscanner", fname],
-        stdout=subprocess.PIPE,
-        text=True,
-        check=True,
-    )
-    new = result.stdout.split("=")
-    print(new)
-
-
 def main():
     """
     main function define the workflow to make a ASN dict->Load the
@@ -201,10 +190,11 @@ def main():
     """
     asn, asn_stats = make_asn(args.mmdb)
     prefixes_mrt, prefix_stats = load_mrt(args.mrt)
+    # breakpoint()
     missing, convert_stats = convert_mrt_mmdb(args.target, prefixes_mrt, asn)
-    message = "Prefixes without description"
-    print(f" {message:<40}  :", len(missing), " prefixes")
-    del asn_stats, prefix_stats, convert_stats
+    #    message = "Prefixes without description"
+    #    print(f" {message:<40}  :", len(missing), " prefixes")
+    del missing, asn_stats, prefix_stats, convert_stats
     return 0
 
 

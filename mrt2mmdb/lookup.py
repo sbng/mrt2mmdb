@@ -8,7 +8,7 @@ import json
 import maxminddb
 from args import get_args
 
-args = get_args(mmdb=True, ipaddress=True, asn=True)
+args = get_args(mmdb=True, ipaddress=True, asn=True, display=True)
 
 if not os.path.isfile(args.mmdb):
     args.print_help(sys.stderr)
@@ -40,6 +40,20 @@ def lookup_asn(fname, asn):
     return result
 
 
+def show_db(fname):
+    """
+    display and pritn the entire mmdb
+    """
+    result = []
+    with maxminddb.open_database(fname) as mreader:
+        for prefix, data in mreader:
+            try:
+                result.append((prefix.compressed, data))
+            except KeyError as e:
+                print(f"Error {e}")
+    return result
+
+
 def main():
     """
     main function for the workflow
@@ -48,6 +62,8 @@ def main():
         print(json.dumps(lookup(args.mmdb, args.ipaddress), indent=1))
     if args.asn != "":
         print(json.dumps(lookup_asn(args.mmdb, args.asn), indent=1))
+    if args.display:
+        print(json.dumps(show_db(args.mmdb), indent=1))
 
 
 if __name__ == "__main__":

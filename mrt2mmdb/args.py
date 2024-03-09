@@ -16,6 +16,8 @@ def get_args(
     quiet=False,
     ipaddress=False,
     asn=False,
+    bgpscan=False,
+    display=False,
 ):
     # pylint: disable=too-many-arguments
     """
@@ -71,6 +73,20 @@ def get_args(
         parser.add_argument(
             "--asn", metavar="", type=str, help="ASN lookup", default=""
         )
+    if bgpscan:
+        parser.add_argument(
+            "--bgpscan",
+            action="store_true",
+            help="Using faster bgpscanner to parse mrt file",
+            default=False,
+        )
+    if display:
+        parser.add_argument(
+            "--display",
+            action="store_true",
+            help="Display the database",
+            default=False,
+        )
     return parser.parse_args()
 
 
@@ -87,6 +103,8 @@ def main():
         ipaddress=True,
         asn=True,
         quiet=True,
+        bgpscan=True,
+        display=True,
     )
     print(args)
     return 0

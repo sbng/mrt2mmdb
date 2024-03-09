@@ -6,8 +6,6 @@ information can be obtained from a routing prefix.
 """
 import os
 import sys
-
-# import subprocess
 import itertools
 import time
 from functools import wraps
@@ -17,10 +15,9 @@ from tqdm import tqdm
 import maxminddb
 import mrtparse
 from args import get_args
+from bgpscanner import parse_bgpscanner, sanitize
 
-# from bgpscanner import bgpscanner
-
-args = get_args(mrt=True, mmdb=True, prefix=True, target=True, quiet=True)
+args = get_args(mrt=True, mmdb=True, prefix=True, target=True, quiet=True, bgpscan=True)
 
 if not (os.path.isfile(args.mrt)) or not os.path.isfile(args.mmdb):
     args.print_help(sys.stderr)
@@ -108,6 +105,17 @@ def make_dict(i, result):
     return result
 
 
+def parse_mrtparse(fname, pb, result, num_prefix):
+    """Parseing of the mrtf file using mrtparse module"""
+    count = 0
+    mrt = mrtparse.Reader(fname)
+    for i in itertools.islice(mrt, num_prefix):
+        result = make_dict(i, result)
+        pb.update(1)
+        count += 1
+    return result, count
+
+
 @timeit
 def load_mrt(fname):
     """
@@ -117,8 +125,7 @@ def load_mrt(fname):
     Workflow: Iterate over the mrt entries (parsed by mrtparse module) to
               form the output dictionary
     """
-    num = args.prefixes
-    count = 0
+    num_prefix = args.prefixes
     result = {}
     message = "Loading mrt data into dictionary"
     with tqdm(
@@ -126,13 +133,9 @@ def load_mrt(fname):
         unit=" prefixes",
         disable=args.quiet,
     ) as pb:
-        #        result, count = bgpscanner(fname, pb, result)
-        mrt = mrtparse.Reader(fname)
-        for i in itertools.islice(mrt, num):
-            result = make_dict(i, result)
-            pb.update(1)
-            count += 1
-    return result, count
+        if args.bgpscan:
+            return parse_bgpscanner(fname, pb, result, num_prefix)
+        return parse_mrtparse(fname, pb, result, num_prefix)
 
 
 @timeit
@@ -163,15 +166,19 @@ def convert_mrt_mmdb(fname, mrt, asn):
         disable=args.quiet,
     ) as pb:
         for prefix, val in mrt.items():
-            if str(val[0][-1]) in asn:
-                org_desc = asn[str(val[0][-1])]
-            else:
-                missing.append(str(val[0][-1]))
-                org_desc = ""
+            try:
+                as_num = sanitize(str(val[0][-1]))
+                if as_num in asn:
+                    org_desc = asn[as_num]
+                else:
+                    missing.append(as_num)
+                    org_desc = ""
+            except IndexError:
+                pass
             writer.insert_network(
                 IPSet(IPNetwork(prefix)),
                 {
-                    "autonomous_system_number": int(val[0][-1]),
+                    "autonomous_system_number": int(as_num),
                     "autonomous_system_organization": org_desc,
                     "organization": str(prefix),
                     "isp": " ".join(val[0]),

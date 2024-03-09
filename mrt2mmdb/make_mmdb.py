@@ -197,11 +197,10 @@ def main():
     """
     asn, asn_stats = make_asn(args.mmdb)
     prefixes_mrt, prefix_stats = load_mrt(args.mrt)
-    # breakpoint()
     missing, convert_stats = convert_mrt_mmdb(args.target, prefixes_mrt, asn)
-    #    message = "Prefixes without description"
-    #    print(f" {message:<40}  :", len(missing), " prefixes")
-    del missing, asn_stats, prefix_stats, convert_stats
+    message = "Prefixes without description"
+    print(f" {message:<40}  :", len(missing), " prefixes")
+    del (asn_stats, prefix_stats, convert_stats)
     return 0
 
 

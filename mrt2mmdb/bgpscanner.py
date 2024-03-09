@@ -26,9 +26,10 @@ def parse_bgpscanner(fname, pb, result, num_prefix):
     """
     count = 0
     my_env = os.environ.copy()
-    my_env["LD_LIBRARY_PATH"] = "lib"
+    exec_path = os.path.dirname(os.path.abspath(__file__))
+    my_env["LD_LIBRARY_PATH"] = exec_path + "/lib"
     with subprocess.Popen(
-        ["bin/bgpscanner", fname],
+        [exec_path + "/bin/bgpscanner", fname],
         stdout=subprocess.PIPE,
         text=True,
         env=my_env,

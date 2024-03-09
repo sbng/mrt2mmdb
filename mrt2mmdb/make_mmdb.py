@@ -23,6 +23,7 @@ parser = get_args(
 args = parser.parse_args()
 
 if not (os.path.isfile(args.mrt)) or not os.path.isfile(args.mmdb):
+    print("\nerror: unable to locate mrt/mmdb file\n")
     parser.print_help(sys.stderr)
     sys.exit(1)
 

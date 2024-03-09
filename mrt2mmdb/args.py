@@ -87,7 +87,7 @@ def get_args(
             help="Display the database",
             default=False,
         )
-    return parser.parse_args()
+    return parser
 
 
 def main():

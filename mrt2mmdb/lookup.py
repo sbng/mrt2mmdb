@@ -8,10 +8,11 @@ import json
 import maxminddb
 from args import get_args
 
-args = get_args(mmdb=True, ipaddress=True, asn=True, display=True)
+parser = get_args(mmdb=True, ipaddress=True, asn=True, display=True)
+args = parser.parse_args()
 
 if not os.path.isfile(args.mmdb):
-    args.print_help(sys.stderr)
+    parser.print_help(sys.stderr)
     sys.exit(1)
 
 

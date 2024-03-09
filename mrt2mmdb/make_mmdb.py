@@ -17,10 +17,13 @@ import mrtparse
 from args import get_args
 from bgpscanner import parse_bgpscanner, sanitize
 
-args = get_args(mrt=True, mmdb=True, prefix=True, target=True, quiet=True, bgpscan=True)
+parser = get_args(
+    mrt=True, mmdb=True, prefix=True, target=True, quiet=True, bgpscan=True
+)
+args = parser.parse_args()
 
 if not (os.path.isfile(args.mrt)) or not os.path.isfile(args.mmdb):
-    args.print_help(sys.stderr)
+    parser.print_help(sys.stderr)
     sys.exit(1)
 
 

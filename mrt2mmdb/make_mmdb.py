@@ -17,15 +17,8 @@ import mrtparse
 from args import get_args
 from bgpscanner import parse_bgpscanner, sanitize
 
-parser = get_args(
-    mrt=True, mmdb=True, prefix=True, target=True, quiet=True, bgpscan=True
-)
-args = parser.parse_args()
-
-if not (os.path.isfile(args.mrt)) or not os.path.isfile(args.mmdb):
-    print("\nerror: unable to locate mrt/mmdb file\n")
-    parser.print_help(sys.stderr)
-    sys.exit(1)
+# pylint: disable=global-statement
+args = {}
 
 
 def timeit(func):
@@ -199,6 +192,16 @@ def main():
     main function define the workflow to make a ASN dict->Load the
     corresponding mrt->convert the mrt into mmda
     """
+    parser = get_args(
+        mrt=True, mmdb=True, prefix=True, target=True, quiet=True, bgpscan=True
+    )
+    global args
+    args = parser.parse_args()
+    if not (os.path.isfile(args.mrt)) or not os.path.isfile(args.mmdb):
+        print("\nerror: unable to locate mrt/mmdb file\n")
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+
     asn, asn_stats = make_asn(args.mmdb)
     prefixes_mrt, prefix_stats = load_mrt(args.mrt)
     missing, convert_stats = convert_mrt_mmdb(args.target, prefixes_mrt, asn)

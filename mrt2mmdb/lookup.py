@@ -8,12 +8,8 @@ import json
 import maxminddb
 from args import get_args
 
-parser = get_args(mmdb=True, ipaddress=True, asn=True, display=True)
-args = parser.parse_args()
-
-if not os.path.isfile(args.mmdb):
-    parser.print_help(sys.stderr)
-    sys.exit(1)
+# pylint: disable=global-statement
+args = {}
 
 
 def lookup(fname, ipadd):
@@ -59,6 +55,13 @@ def main():
     """
     main function for the workflow
     """
+    parser = get_args(mmdb=True, ipaddress=True, asn=True, display=True)
+    global args
+    args = parser.parse_args()
+    if not os.path.isfile(args.mmdb):
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+
     if args.ipaddress != "":
         print(json.dumps(lookup(args.mmdb, args.ipaddress), indent=1))
     if args.asn != "":

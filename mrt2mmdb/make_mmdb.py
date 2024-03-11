@@ -187,6 +187,13 @@ def convert_mrt_mmdb(fname, mrt, asn):
     return missing, count
 
 
+def display_stats(text, stats):
+    """Display length of a list"""
+    message = text
+    if not args.quiet:
+        print(f" {message:<40}  :", len(stats), " prefixes")
+
+
 def main():
     """
     main function define the workflow to make a ASN dict->Load the
@@ -205,8 +212,7 @@ def main():
     asn, asn_stats = make_asn(args.mmdb)
     prefixes_mrt, prefix_stats = load_mrt(args.mrt)
     missing, convert_stats = convert_mrt_mmdb(args.target, prefixes_mrt, asn)
-    message = "Prefixes without description"
-    print(f" {message:<40}  :", len(missing), " prefixes")
+    display_stats("Prefixes without description", missing)
     del (asn_stats, prefix_stats, convert_stats)
     return 0
 

@@ -16,6 +16,8 @@ import maxminddb
 import mrtparse
 from args import get_args
 from bgpscanner import parse_bgpscanner, sanitize
+from prometheus import output_prometheus
+from file_stats import all_files_create
 
 # pylint: disable=global-statement
 args = {}
@@ -56,7 +58,7 @@ def make_asn(fname):
     asn = {}
     count = 0
     message = "Making ASN table for description lookup"
-    with maxminddb.open_database(fname) as mreader:
+    with maxminddb.open_database(fname, 1) as mreader:
         with tqdm(
             desc=f" {message:<40}  ",
             unit=" prefixes",
@@ -200,7 +202,13 @@ def main():
     corresponding mrt->convert the mrt into mmda
     """
     parser = get_args(
-        mrt=True, mmdb=True, prefix=True, target=True, quiet=True, bgpscan=True
+        mrt=True,
+        mmdb=True,
+        prefix=True,
+        target=True,
+        quiet=True,
+        bgpscan=True,
+        prometheus=True,
     )
     global args
     args = parser.parse_args()
@@ -208,12 +216,21 @@ def main():
         print("\nerror: unable to locate mrt/mmdb file\n")
         parser.print_help(sys.stderr)
         sys.exit(1)
+    if args.prometheus:
+        # Force quiet mode in order to generate the prometheus output
+        args.quiet = True
 
     asn, asn_stats = make_asn(args.mmdb)
     prefixes_mrt, prefix_stats = load_mrt(args.mrt)
     missing, convert_stats = convert_mrt_mmdb(args.target, prefixes_mrt, asn)
     display_stats("Prefixes without description", missing)
-    del (asn_stats, prefix_stats, convert_stats)
+    files_stats = all_files_create([args.mmdb, args.mrt, args.target])
+    if args.prometheus:
+        print(
+            output_prometheus(
+                asn_stats, prefix_stats, convert_stats, missing, files_stats
+            )
+        )
     return 0
 
 

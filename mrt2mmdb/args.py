@@ -18,6 +18,7 @@ def get_args(
     asn=False,
     bgpscan=False,
     display=False,
+    prometheus=False,
 ):
     # pylint: disable=too-many-arguments
     """
@@ -87,25 +88,30 @@ def get_args(
             help="Display the database",
             default=False,
         )
+    if prometheus:
+        parser.add_argument(
+            "--prometheus",
+            action="store_true",
+            help="Output statistics for prometheus injestion",
+            default=False,
+        )
     return parser
 
 
 def main():
     """
-    main function define the workflow to make a ASN dict->Load the
-    corresponding mrt->convert the mrt into mmda
+    main function define to test the function before integeration
     """
-    args = get_args(
-        mrt=True,
+    parser = get_args(
         mmdb=True,
+        mrt=True,
         target=True,
-        prefix=True,
-        ipaddress=True,
-        asn=True,
-        quiet=True,
         bgpscan=True,
+        prometheus=True,
+        prefix=True,
         display=True,
     )
+    args = parser.parse_args()
     print(args)
     return 0
 

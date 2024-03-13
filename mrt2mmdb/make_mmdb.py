@@ -224,6 +224,7 @@ def main():
     prefixes_mrt, prefix_stats = load_mrt(args.mrt)
     missing, convert_stats = convert_mrt_mmdb(args.target, prefixes_mrt, asn)
     display_stats("Prefixes without description", missing)
+    display_stats("ASN without description", set(missing))
     files_stats = all_files_create([args.mmdb, args.mrt, args.target])
     if args.prometheus:
         print(

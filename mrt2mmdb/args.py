@@ -19,6 +19,8 @@ def get_args(
     bgpscan=False,
     display=False,
     prometheus=False,
+    database_type=False,
+    show_db_type=False,
 ):
     # pylint: disable=too-many-arguments
     """
@@ -95,6 +97,21 @@ def get_args(
             help="Output statistics for prometheus injestion",
             default=False,
         )
+    if database_type:
+        parser.add_argument(
+            "--database_type",
+            metavar="",
+            type=str,
+            help="Type pf mmdb database (default: mrt2mmdb)",
+            default="mrt2mmdb",
+        )
+    if show_db_type:
+        parser.add_argument(
+            "--show_db_type",
+            action="store_true",
+            help="Show the mmdb database type",
+            default=False,
+        )
     return parser
 
 
@@ -112,7 +129,7 @@ def main():
         display=True,
     )
     args = parser.parse_args()
-    print(args)
+    del args
     return 0
 
 

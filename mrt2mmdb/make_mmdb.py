@@ -156,7 +156,9 @@ def convert_mrt_mmdb(fname, mrt, asn):
               all mmdb entries into the target file.
     """
     missing = []
-    writer = MMDBWriter(ip_version=6, ipv4_compatible=True)
+    writer = MMDBWriter(
+        ip_version=6, ipv4_compatible=True, database_type=args.database_type
+    )
     count = 0
     message = "Converting mrt into mmda"
     with tqdm(
@@ -209,6 +211,7 @@ def main():
         quiet=True,
         bgpscan=True,
         prometheus=True,
+        database_type=True,
     )
     global args
     args = parser.parse_args()

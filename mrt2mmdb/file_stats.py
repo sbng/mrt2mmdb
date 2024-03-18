@@ -27,7 +27,7 @@ def main():
         mmdb=True,
     )
     args = parser.parse_args()
-    print(args)
+    del args
     return 0
 
 

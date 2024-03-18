@@ -39,7 +39,7 @@ def lookup_asn(fname, asn):
 
 def show_db(fname):
     """
-    display and pritn the entire mmdb
+    display and print the entire mmdb
     """
     result = []
     with maxminddb.open_database(fname) as mreader:
@@ -51,11 +51,21 @@ def show_db(fname):
     return result
 
 
+def show_db_type(fname):
+    """
+    Show the database type of the mmdb file
+    """
+    with maxminddb.open_database(fname) as mreader:
+        return mreader.metadata().database_type
+
+
 def main():
     """
     main function for the workflow
     """
-    parser = get_args(mmdb=True, ipaddress=True, asn=True, display=True)
+    parser = get_args(
+        mmdb=True, ipaddress=True, asn=True, display=True, show_db_type=True
+    )
     global args
     args = parser.parse_args()
     if not os.path.isfile(args.mmdb):
@@ -68,6 +78,8 @@ def main():
         print(json.dumps(lookup_asn(args.mmdb, args.asn), indent=1))
     if args.display:
         print(json.dumps(show_db(args.mmdb), indent=1))
+    if args.show_db_type:
+        print(json.dumps(show_db_type(args.mmdb), indent=1))
 
 
 if __name__ == "__main__":

@@ -22,9 +22,9 @@ def main():
     corresponding mrt->convert the mrt into mmda
     """
     parser = get_args(
+        target=True,
         mrt=True,
         mmdb=True,
-        target=True,
     )
     args = parser.parse_args()
     print(args)

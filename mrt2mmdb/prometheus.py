@@ -25,6 +25,7 @@ mrt2mmdb_conversions_per_second {convert_stats[0]/convert_stats[1]:.2f}
 # How many prefixes were not found in the Maxmind template file that we’re using as a source for names?
 #
 mrt2mmdb_prefixes_no_description {len(missing_stats)} 
+mrt2mmdb_asn_no_description {len(set(missing_stats))}
 #
 # When did this instance of the process start? Unix epoch seconds.
 #

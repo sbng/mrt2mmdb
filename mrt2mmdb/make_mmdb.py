@@ -179,8 +179,8 @@ def convert_mrt_mmdb(fname, mrt, asn):
                 {
                     "autonomous_system_number": int(as_num),
                     "autonomous_system_organization": org_desc,
-                    "organization": str(prefix),
-                    "isp": " ".join(val[0]),
+                    "prefix": str(prefix),
+                    "path": " ".join(val[0]),
                 },
             )
             pb.update(1)

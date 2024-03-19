@@ -8,6 +8,7 @@ import os
 import sys
 import itertools
 import time
+import logging
 from functools import wraps
 from netaddr import IPSet, IPNetwork
 from mmdb_writer import MMDBWriter
@@ -191,11 +192,12 @@ def convert_mrt_mmdb(fname, mrt, asn):
     return missing, count
 
 
-def display_stats(text, stats):
+def display_stats(text, stats, logger):
     """Display length of a list"""
     message = text
     if not args.quiet:
-        print(f" {message:<40}  :", len(stats), " prefixes")
+        logger.warning(f" {message:<40}  : {len(stats)} prefixes")
+        logger.debug(f" {stats} ")
 
 
 def main():
@@ -203,6 +205,7 @@ def main():
     main function define the workflow to make a ASN dict->Load the
     corresponding mrt->convert the mrt into mmda
     """
+    # Init route to get arguments and prase. Logging is also configured
     parser = get_args(
         mrt=True,
         mmdb=True,
@@ -212,13 +215,26 @@ def main():
         bgpscan=True,
         prometheus=True,
         database_type=True,
+        log_level=True,
     )
     global args
     args = parser.parse_args()
+
+    # set up basic logging
+    logging_level = getattr(logging, (args.log_level).upper(), None)
+    logging.basicConfig(
+        level=logging_level,
+        format="",
+        force=True,
+    )
+    logger = logging.getLogger(__name__)
+
     if not (os.path.isfile(args.mrt)) or not os.path.isfile(args.mmdb):
         print("\nerror: unable to locate mrt/mmdb file\n")
         parser.print_help(sys.stderr)
         sys.exit(1)
+    if args.quiet:
+        logging.disable(logging.WARNING)
     if args.prometheus:
         # Force quiet mode in order to generate the prometheus output
         args.quiet = True
@@ -226,11 +242,12 @@ def main():
     asn, asn_stats = make_asn(args.mmdb)
     prefixes_mrt, prefix_stats = load_mrt(args.mrt)
     missing, convert_stats = convert_mrt_mmdb(args.target, prefixes_mrt, asn)
-    display_stats("Prefixes without description", missing)
-    display_stats("ASN without description", set(missing))
-    files_stats = all_files_create([args.mmdb, args.mrt, args.target])
+    display_stats("Prefixes without description", missing, logger)
+    display_stats("ASN without description", set(missing), logger)
+    files_stats = all_files_create([args.mmdb, args.mrt, args.target], logger)
+
     if args.prometheus:
-        print(
+        logger.warning(
             output_prometheus(
                 asn_stats, prefix_stats, convert_stats, missing, files_stats
             )

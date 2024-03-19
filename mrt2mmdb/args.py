@@ -21,8 +21,10 @@ def get_args(
     prometheus=False,
     database_type=False,
     show_db_type=False,
+    log_level=False,
 ):
     # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-branches
     """
     Input: keywords boolean of the desire argument
     Output: The argument obtained from the command line
@@ -111,6 +113,14 @@ def get_args(
             action="store_true",
             help="Show the mmdb database type",
             default=False,
+        )
+    if log_level:
+        parser.add_argument(
+            "--log_level",
+            metavar="",
+            type=str,
+            help="logging level [CRITICAL|WARNING|INFO|DEBUG](default: WARNING)",
+            default="WARNING",
         )
     return parser
 

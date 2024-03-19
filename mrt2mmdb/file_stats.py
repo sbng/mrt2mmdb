@@ -3,17 +3,19 @@
 This module returns the file creation time for injestion by prometheus
 """
 import os
-from args import get_args
+import time
 
 
-def file_create(fname):
-    """return the file creation time in epoch time"""
-    return os.path.getmtime(fname)
+def file_create(fname, logger):
+    """return the file creati on time in epoch time"""
+    etime = os.path.getmtime(fname)
+    logger.debug(f"[File]: {fname} -> {time.ctime(etime)} ({etime:.0f})")
+    return etime
 
 
-def all_files_create(files):
+def all_files_create(files, logger):
     """return the files creation time"""
-    return [file_create(f) for f in files]
+    return [file_create(f, logger) for f in files]
 
 
 def main():
@@ -21,13 +23,6 @@ def main():
     main function define the workflow to make a ASN dict->Load the
     corresponding mrt->convert the mrt into mmda
     """
-    parser = get_args(
-        target=True,
-        mrt=True,
-        mmdb=True,
-    )
-    args = parser.parse_args()
-    del args
     return 0
 
 

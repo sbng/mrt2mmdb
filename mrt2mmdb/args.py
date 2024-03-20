@@ -13,6 +13,7 @@ def get_args(
     mmdb=False,
     target=False,
     lookup_file=False,
+    custom_lookup_only=False,
     prefix=False,
     quiet=False,
     ipaddress=False,
@@ -26,6 +27,7 @@ def get_args(
 ):
     # pylint: disable=too-many-arguments
     # pylint: disable=too-many-branches
+    # pylint: disable=too-many-locals
     """
     Input: keywords boolean of the desire argument
     Output: The argument obtained from the command line
@@ -64,6 +66,13 @@ def get_args(
             help="Filename of csv,tsv file for custom ASN lookup",
             default="",
             #            default="data/asn_rir_org_country.csv",
+        )
+    if custom_lookup_only:
+        parser.add_argument(
+            "--custom_lookup_only",
+            action="store_true",
+            help="Only use the lookup file for ASN description (default: both)",
+            default=False,
         )
     if prefix:
         parser.add_argument(

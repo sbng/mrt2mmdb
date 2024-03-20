@@ -60,25 +60,28 @@ def make_asn(fname):
     asn = {}
     asn_custom = {}
     count = 0
-    message = "Making ASN table for description lookup"
-    with maxminddb.open_database(fname, 1) as mreader:
-        with tqdm(
-            desc=f" {message:<40}  ",
-            unit=" prefixes",
-            disable=args.quiet,
-        ) as pb:
-            for prefix, data in mreader:
-                try:
-                    del prefix
-                    asn[str(data["autonomous_system_number"])] = data[
-                        "autonomous_system_organization"
-                    ]
-                    pb.update(1)
-                    count += 1
-                except KeyError:
-                    pass
+    if not args.custom_lookup_only:
+        # Make Maxmind ASN lookup table
+        message = "Making ASN table for description lookup"
+        with maxminddb.open_database(fname, 1) as mreader:
+            with tqdm(
+                desc=f" {message:<40}  ",
+                unit=" prefixes",
+                disable=args.quiet,
+            ) as pb:
+                for prefix, data in mreader:
+                    try:
+                        del prefix
+                        asn[str(data["autonomous_system_number"])] = data[
+                            "autonomous_system_organization"
+                        ]
+                        pb.update(1)
+                        count += 1
+                    except KeyError:
+                        pass
     if os.path.isfile(args.lookup_file):
-        asn_custom = parse_flatfile(args.lookup_file)
+        # Make custom ASN lookup table
+        asn_custom = parse_flatfile(args.lookup_file, args.quiet)
     if bool(asn_custom):
         asn.update(asn_custom)
     return asn, count
@@ -194,7 +197,14 @@ def convert_mrt_mmdb(fname, mrt, asn):
             )
             pb.update(1)
             count += 1
+    message = "Writing mmda file"
+    with tqdm(
+        desc=f" {message:<40}  ",
+        unit="",
+        disable=args.quiet,
+    ) as pb:
         writer.to_db_file(fname)
+        pb.update(1)
     return missing, count
 
 
@@ -218,6 +228,7 @@ def main():
         prefix=True,
         target=True,
         lookup_file=True,
+        custom_lookup_only=True,
         quiet=True,
         bgpscan=True,
         prometheus=True,

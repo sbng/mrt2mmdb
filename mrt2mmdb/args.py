@@ -12,6 +12,7 @@ def get_args(
     mrt=False,
     mmdb=False,
     target=False,
+    lookup_file=False,
     prefix=False,
     quiet=False,
     ipaddress=False,
@@ -54,6 +55,15 @@ def get_args(
             type=str,
             help="Filename of new target mmdb file generated from mmrt file",
             default="out.mmdb",
+        )
+    if lookup_file:
+        parser.add_argument(
+            "--lookup_file",
+            metavar="",
+            type=str,
+            help="Filename of csv,tsv file for custom ASN lookup",
+            default="",
+            #            default="data/asn_rir_org_country.csv",
         )
     if prefix:
         parser.add_argument(

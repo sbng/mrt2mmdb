@@ -19,6 +19,7 @@ from args import get_args
 from bgpscanner import parse_bgpscanner, sanitize
 from prometheus import output_prometheus
 from file_stats import all_files_create
+from flat_file import parse_flatfile
 
 # pylint: disable=global-statement
 args = {}
@@ -57,6 +58,7 @@ def make_asn(fname):
     Workflow: Iterate over the mmdb entries to create the desire dictionary
     """
     asn = {}
+    asn_custom = {}
     count = 0
     message = "Making ASN table for description lookup"
     with maxminddb.open_database(fname, 1) as mreader:
@@ -75,6 +77,10 @@ def make_asn(fname):
                     count += 1
                 except KeyError:
                     pass
+    if os.path.isfile(args.lookup_file):
+        asn_custom = parse_flatfile(args.lookup_file)
+    if bool(asn_custom):
+        asn.update(asn_custom)
     return asn, count
 
 
@@ -211,6 +217,7 @@ def main():
         mmdb=True,
         prefix=True,
         target=True,
+        lookup_file=True,
         quiet=True,
         bgpscan=True,
         prometheus=True,
@@ -239,6 +246,7 @@ def main():
         # Force quiet mode in order to generate the prometheus output
         args.quiet = True
 
+    logger.debug(args)
     asn, asn_stats = make_asn(args.mmdb)
     prefixes_mrt, prefix_stats = load_mrt(args.mrt)
     missing, convert_stats = convert_mrt_mmdb(args.target, prefixes_mrt, asn)

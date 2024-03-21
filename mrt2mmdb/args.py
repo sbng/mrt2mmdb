@@ -8,139 +8,167 @@ boolean variable to capture the argument needed when this module is called.
 import argparse
 
 
-def get_args(
-    mrt=False,
-    mmdb=False,
-    target=False,
-    lookup_file=False,
-    custom_lookup_only=False,
-    prefix=False,
-    quiet=False,
-    ipaddress=False,
-    asn=False,
-    bgpscan=False,
-    display=False,
-    prometheus=False,
-    database_type=False,
-    show_db_type=False,
-    log_level=False,
-):
-    # pylint: disable=too-many-arguments
-    # pylint: disable=too-many-branches
-    # pylint: disable=too-many-locals
+def mrt_arg(parser):
+    """define arguments to be added"""
+    return parser.add_argument(
+        "--mrt",
+        metavar="",
+        type=str,
+        help="Filename of mrt dump",
+        default="data/mrt-dump.ams.202402171710.gz",
+    )
+
+
+def mmdb_arg(parser):
+    """define arguments to be added"""
+    return parser.add_argument(
+        "--mmdb",
+        metavar="",
+        type=str,
+        help="Filename of Maxmind mmdb file for prefixes lookup and return description/ASN",
+        default="data/GeoLite2-ASN.mmdb",
+    )
+
+
+def target_arg(parser):
+    """define arguments to be added"""
+    return parser.add_argument(
+        "--target",
+        metavar="",
+        type=str,
+        help="Filename of new target mmdb file generated from mmrt file",
+        default="out.mmdb",
+    )
+
+
+def lookup_file_arg(parser):
+    """define arguments to be added"""
+    return parser.add_argument(
+        "--lookup_file",
+        metavar="",
+        type=str,
+        help="Filename of csv,tsv file for custom ASN lookup",
+        default="",
+        #            default="data/asn_rir_org_country.csv",
+    )
+
+
+def custom_lookup_only_arg(parser):
+    """define arguments to be added"""
+    return parser.add_argument(
+        "--custom_lookup_only",
+        action="store_true",
+        help="Only use the lookup file for ASN description (default: both)",
+        default=False,
+    )
+
+
+def prefix_arg(parser):
+    """define arguments to be added"""
+    return parser.add_argument(
+        "--prefixes",
+        metavar="",
+        type=int,
+        help="Number of prefixes to process in mrt file (default:all)",
+        default=None,
+    )
+
+
+def quiet_arg(parser):
+    """define arguments to be added"""
+    return parser.add_argument(
+        "--quiet",
+        action="store_true",
+        help="Turn off verbose (default:verbose)",
+        default=False,
+    )
+
+
+def ipaddress_arg(parser):
+    """define arguments to be added"""
+    return parser.add_argument(
+        "--ipaddress", metavar="", type=str, help="IP address lookup", default=""
+    )
+
+
+def asn_arg(parser):
+    """define arguments to be added"""
+    return parser.add_argument(
+        "--asn", metavar="", type=str, help="ASN lookup", default=""
+    )
+
+
+def bgpscan_arg(parser):
+    """define arguments to be added"""
+    return parser.add_argument(
+        "--bgpscan",
+        action="store_true",
+        help="Using faster bgpscanner to parse mrt file",
+        default=False,
+    )
+
+
+def display_arg(parser):
+    """define arguments to be added"""
+    return parser.add_argument(
+        "--display",
+        action="store_true",
+        help="Display the database",
+        default=False,
+    )
+
+
+def prometheus_arg(parser):
+    """define arguments to be added"""
+    return parser.add_argument(
+        "--prometheus",
+        action="store_true",
+        help="Output statistics for prometheus injestion",
+        default=False,
+    )
+
+
+def database_type_arg(parser):
+    """define arguments to be added"""
+    return parser.add_argument(
+        "--database_type",
+        metavar="",
+        type=str,
+        help="Type pf mmdb database (default: mrt2mmdb)",
+        default="mrt2mmdb",
+    )
+
+
+def show_db_type_arg(parser):
+    """define arguments to be added"""
+    return parser.add_argument(
+        "--show_db_type",
+        action="store_true",
+        help="Show the mmdb database type",
+        default=False,
+    )
+
+
+def log_level_arg(parser):
+    """define arguments to be added"""
+    return parser.add_argument(
+        "--log_level",
+        metavar="",
+        type=str,
+        help="logging level [CRITICAL|WARNING|INFO|DEBUG](default: WARNING)",
+        default="WARNING",
+    )
+
+
+def get_args(options):
     """
     Input: keywords boolean of the desire argument
     Output: The argument obtained from the command line
     Caveat: Boolean variable allows the desired argument to be captured
     """
     parser = argparse.ArgumentParser()
-    if mrt:
-        parser.add_argument(
-            "--mrt",
-            metavar="",
-            type=str,
-            help="Filename of mrt dump",
-            default="data/mrt-dump.ams.202402171710.gz",
-        )
-    if mmdb:
-        parser.add_argument(
-            "--mmdb",
-            metavar="",
-            type=str,
-            help="Filename of Maxmind mmdb file for prefixes lookup and return description/ASN",
-            default="data/GeoLite2-ASN.mmdb",
-        )
-    if target:
-        parser.add_argument(
-            "--target",
-            metavar="",
-            type=str,
-            help="Filename of new target mmdb file generated from mmrt file",
-            default="out.mmdb",
-        )
-    if lookup_file:
-        parser.add_argument(
-            "--lookup_file",
-            metavar="",
-            type=str,
-            help="Filename of csv,tsv file for custom ASN lookup",
-            default="",
-            #            default="data/asn_rir_org_country.csv",
-        )
-    if custom_lookup_only:
-        parser.add_argument(
-            "--custom_lookup_only",
-            action="store_true",
-            help="Only use the lookup file for ASN description (default: both)",
-            default=False,
-        )
-    if prefix:
-        parser.add_argument(
-            "--prefixes",
-            metavar="",
-            type=int,
-            help="Number of prefixes to process in mrt file (default:all)",
-            default=None,
-        )
-    if quiet:
-        parser.add_argument(
-            "--quiet",
-            action="store_true",
-            help="Turn off verbose (default:verbose)",
-            default=False,
-        )
-    if ipaddress:
-        parser.add_argument(
-            "--ipaddress", metavar="", type=str, help="IP address lookup", default=""
-        )
-    if asn:
-        parser.add_argument(
-            "--asn", metavar="", type=str, help="ASN lookup", default=""
-        )
-    if bgpscan:
-        parser.add_argument(
-            "--bgpscan",
-            action="store_true",
-            help="Using faster bgpscanner to parse mrt file",
-            default=False,
-        )
-    if display:
-        parser.add_argument(
-            "--display",
-            action="store_true",
-            help="Display the database",
-            default=False,
-        )
-    if prometheus:
-        parser.add_argument(
-            "--prometheus",
-            action="store_true",
-            help="Output statistics for prometheus injestion",
-            default=False,
-        )
-    if database_type:
-        parser.add_argument(
-            "--database_type",
-            metavar="",
-            type=str,
-            help="Type pf mmdb database (default: mrt2mmdb)",
-            default="mrt2mmdb",
-        )
-    if show_db_type:
-        parser.add_argument(
-            "--show_db_type",
-            action="store_true",
-            help="Show the mmdb database type",
-            default=False,
-        )
-    if log_level:
-        parser.add_argument(
-            "--log_level",
-            metavar="",
-            type=str,
-            help="logging level [CRITICAL|WARNING|INFO|DEBUG](default: WARNING)",
-            default="WARNING",
-        )
+    for arg in options:
+        arg(parser)
     return parser
 
 
@@ -148,15 +176,7 @@ def main():
     """
     main function define to test the function before integeration
     """
-    parser = get_args(
-        mmdb=True,
-        mrt=True,
-        target=True,
-        bgpscan=True,
-        prometheus=True,
-        prefix=True,
-        display=True,
-    )
+    parser = get_args([mmdb_arg, mrt_arg, log_level_arg])
     args = parser.parse_args()
     del args
     return 0

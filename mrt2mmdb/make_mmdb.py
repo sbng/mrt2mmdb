@@ -15,7 +15,20 @@ from mmdb_writer import MMDBWriter
 from tqdm import tqdm
 import maxminddb
 import mrtparse
-from args import get_args
+from args import (
+    get_args,
+    mrt_arg,
+    mmdb_arg,
+    prefix_arg,
+    target_arg,
+    lookup_file_arg,
+    custom_lookup_only_arg,
+    quiet_arg,
+    bgpscan_arg,
+    prometheus_arg,
+    database_type_arg,
+    log_level_arg,
+)
 from bgpscanner import parse_bgpscanner, sanitize
 from prometheus import output_prometheus
 from file_stats import all_files_create
@@ -223,17 +236,19 @@ def main():
     """
     # Init route to get arguments and prase. Logging is also configured
     parser = get_args(
-        mrt=True,
-        mmdb=True,
-        prefix=True,
-        target=True,
-        lookup_file=True,
-        custom_lookup_only=True,
-        quiet=True,
-        bgpscan=True,
-        prometheus=True,
-        database_type=True,
-        log_level=True,
+        [
+            mrt_arg,
+            mmdb_arg,
+            prefix_arg,
+            target_arg,
+            lookup_file_arg,
+            custom_lookup_only_arg,
+            quiet_arg,
+            bgpscan_arg,
+            prometheus_arg,
+            database_type_arg,
+            log_level_arg,
+        ]
     )
     global args
     args = parser.parse_args()

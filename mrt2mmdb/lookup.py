@@ -6,7 +6,15 @@ import os
 import sys
 import json
 import maxminddb
-from args import get_args
+
+from args import (
+    get_args,
+    mmdb_arg,
+    ipaddress_arg,
+    asn_arg,
+    display_arg,
+    show_db_type_arg,
+)
 
 # pylint: disable=global-statement
 args = {}
@@ -51,7 +59,7 @@ def show_db(fname):
     return result
 
 
-def show_db_type(fname):
+def db_type(fname):
     """
     Show the database type of the mmdb file
     """
@@ -63,9 +71,7 @@ def main():
     """
     main function for the workflow
     """
-    parser = get_args(
-        mmdb=True, ipaddress=True, asn=True, display=True, show_db_type=True
-    )
+    parser = get_args([mmdb_arg, ipaddress_arg, asn_arg, display_arg, show_db_type_arg])
     global args
     args = parser.parse_args()
     if not os.path.isfile(args.mmdb):
@@ -79,7 +85,7 @@ def main():
     if args.display:
         print(json.dumps(show_db(args.mmdb), indent=1))
     if args.show_db_type:
-        print(json.dumps(show_db_type(args.mmdb), indent=1))
+        print(json.dumps(db_type(args.mmdb), indent=1))
 
 
 if __name__ == "__main__":

@@ -20,6 +20,7 @@ def parse_flatfile(fname, quiet):
             unit=" prefixes",
             disable=quiet,
         ) as pb:
+            count = 0
             for row in reader:
                 # tsv file missing the country information on the last column
                 # add the country as empty string. csv handle the country correctly
@@ -28,7 +29,8 @@ def parse_flatfile(fname, quiet):
                 #    row.append('')
                 result[row[0]] = str(row[2])
                 pb.update(1)
-        return result
+                count += 1
+        return result, count
 
 
 def main():

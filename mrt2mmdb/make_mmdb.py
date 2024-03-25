@@ -61,6 +61,12 @@ def timeit(func):
 
 
 @timeit
+def make_asn_custom(fname):
+    """Make custom ASN lookup table"""
+    return parse_flatfile(fname, args.quiet)
+
+
+@timeit
 def make_asn(fname):
     """
     Input:  A complete mmdb file that contains prefixes with ASN and description
@@ -71,7 +77,6 @@ def make_asn(fname):
     Workflow: Iterate over the mmdb entries to create the desire dictionary
     """
     asn = {}
-    asn_custom = {}
     count = 0
     if not args.custom_lookup_only:
         # Make Maxmind ASN lookup table
@@ -92,11 +97,11 @@ def make_asn(fname):
                         count += 1
                     except KeyError:
                         pass
-    if os.path.isfile(args.lookup_file):
-        # Make custom ASN lookup table
-        asn_custom = parse_flatfile(args.lookup_file, args.quiet)
-    if bool(asn_custom):
-        asn.update(asn_custom)
+    #    if os.path.isfile(args.lookup_file):
+    #        # Make custom ASN lookup table
+    #        asn_custom = parse_flatfile(args.lookup_file, args.quiet)
+    #    if bool(asn_custom):
+    #        asn.update(asn_custom)
     return asn, count
 
 
@@ -274,6 +279,14 @@ def main():
 
     logger.debug(args)
     asn, asn_stats = make_asn(args.mmdb)
+    if os.path.isfile(args.lookup_file):
+        asn_custom, asn_custom_stats = make_asn_custom(args.lookup_file)
+        if args.custom_lookup_only:
+            asn = asn_custom
+            asn_stats = asn_custom_stats
+        else:
+            # merge asn lookup table for combination lookup
+            asn.update(asn_custom)
     prefixes_mrt, prefix_stats = load_mrt(args.mrt)
     missing, convert_stats = convert_mrt_mmdb(args.target, prefixes_mrt, asn)
     display_stats("Prefixes without description", missing, logger)

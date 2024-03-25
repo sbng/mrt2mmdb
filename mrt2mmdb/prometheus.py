@@ -24,24 +24,24 @@ mrt2mmdb_conversions_per_second {convert_stats[0]/convert_stats[1]:.2f}
 #
 # How many prefixes were not found in the Maxmind template file that we’re using as a source for names?
 #
-mrt2mmdb_prefixes_no_description {len(missing_stats)} 
+mrt2mmdb_prefixes_no_description {len(missing_stats)}
 mrt2mmdb_asn_no_description {len(set(missing_stats))}
 #
 # When did this instance of the process start? Unix epoch seconds.
 #
-mrt2mmdb_lastrun_timestamp {files_stats[0]:.0f} 
+mrt2mmdb_lastrun_timestamp {files_stats[0]:.0f}
 #
 # This is the creationtime of the MRT file that is being parsed
 # Unix epoch seconds.  This is what we can use to see if somehow
 # our MRT file collection pipeline is “stuck” and not being updated.
 #
-mrt2mmdb_mrt_file_creation_timestamp {files_stats[1]:.0f} 
+mrt2mmdb_mrt_file_creation_timestamp {files_stats[1]:.0f}
 #
 # This is the creationtime of the template MMDB file that is being parsed
 # Unix epoch seconds.  This is what we can use to see if somehow
 # our template MMDB file collection pipeline is “stuck” and not being updated.
 #
-mrt2mmdb_template_mmdb_file_creation_timestamp {files_stats[2]:.0f} 
+mrt2mmdb_template_mmdb_file_creation_timestamp {files_stats[2]:.0f}
 #
 # Keep a version number so we can track behaviors of different variations
 # MUST BE NUMERIC ONLY, with a single decimal point.

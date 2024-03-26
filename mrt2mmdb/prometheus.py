@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-""" This module output prometheus formated text for prometheus injestion. 
+""" This module output prometheus formated text for prometheus injestion.
 Require statistic from various sources to include in the prometheus output.
 """
 

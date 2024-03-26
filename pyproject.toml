@@ -8,7 +8,7 @@ version = "0.1.2"
 authors = [{name="SB", email="seo.boon.ng@gmail.com" }]
 description = "Convert and enrich a mrt file into mmdb"
 readme = "README.md"
-dependencies = ["tqdm","maxminddb","mmdb_writer","mrtparse","netaddr","setuptools"]
+dependencies = ["tqdm","maxminddb","mmdb_writer","mrtparse","netaddr","setuptools", "deepdiff"]
 requires-python = ">=3.9"
 
 [project.scripts]

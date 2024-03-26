@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 This module convert a mrt to mmdb format. This conversion also enrich the
-new mmdb file with network description whereby a more rich and complete 
+new mmdb file with network description whereby a more rich and complete
 information can be obtained from a routing prefix.
 """
 import os

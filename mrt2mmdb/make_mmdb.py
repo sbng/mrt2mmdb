@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 This module convert a mrt to mmdb format. This conversion also enrich the
-new mmdb file with network description whereby a more rich and complete 
+new mmdb file with network description whereby a more rich and complete
 information can be obtained from a routing prefix.
 """
 import os
@@ -61,13 +61,13 @@ def timeit(func):
 
 
 @timeit
-def make_asn_custom(fname):
+def make_asn_custom(fname, quiet=False):
     """Make custom ASN lookup table"""
-    return parse_flatfile(fname, args.quiet)
+    return parse_flatfile(fname, quiet)
 
 
 @timeit
-def make_asn(fname):
+def make_asn(fname, quiet=False):
     """
     Input:  A complete mmdb file that contains prefixes with ASN and description
     Output: Return a ASN lookup dictionary that provides a description for each ASN
@@ -78,31 +78,51 @@ def make_asn(fname):
     """
     asn = {}
     count = 0
-    if not args.custom_lookup_only:
-        # Make Maxmind ASN lookup table
-        message = "Making ASN table for description lookup"
-        with maxminddb.open_database(fname, 1) as mreader:
-            with tqdm(
-                desc=f" {message:<40}  ",
-                unit=" prefixes",
-                disable=args.quiet,
-            ) as pb:
-                for prefix, data in mreader:
-                    try:
-                        del prefix
-                        asn[str(data["autonomous_system_number"])] = data[
-                            "autonomous_system_organization"
-                        ]
-                        pb.update(1)
-                        count += 1
-                    except KeyError:
-                        pass
-    #    if os.path.isfile(args.lookup_file):
-    #        # Make custom ASN lookup table
-    #        asn_custom = parse_flatfile(args.lookup_file, args.quiet)
-    #    if bool(asn_custom):
-    #        asn.update(asn_custom)
+    # Make Maxmind ASN lookup table
+    message = "Making ASN table for description lookup"
+    with maxminddb.open_database(fname, 1) as mreader:
+        with tqdm(
+            desc=f" {message:<40}  ",
+            unit=" prefixes",
+            disable=quiet,
+        ) as pb:
+            for prefix, data in mreader:
+                try:
+                    del prefix
+                    asn[str(data["autonomous_system_number"])] = data[
+                        "autonomous_system_organization"
+                    ]
+                    pb.update(1)
+                    count += 1
+                except KeyError:
+                    pass
     return asn, count
+
+
+@timeit
+def make_routing(fname, quiet=False):
+    """
+    Input:  A complete mmdb file that contains prefixes with ASN and description
+    Output: Return a prefix lookup dictionary with ASN as it's value
+    """
+    routing = {}
+    count = 0
+    # Make Maxmind ASN lookup table
+    message = "Making routing table dictionary with prefix-key and ASN-value"
+    with maxminddb.open_database(fname, 1) as mreader:
+        with tqdm(
+            desc=f" {message:<40}  ",
+            unit=" prefixes",
+            disable=quiet,
+        ) as pb:
+            for prefix, data in mreader:
+                try:
+                    routing[str(prefix)] = str(data["autonomous_system_number"])
+                    pb.update(1)
+                    count += 1
+                except KeyError:
+                    pass
+    return routing, count
 
 
 def make_dict(i, result):
@@ -166,7 +186,7 @@ def load_mrt(fname):
 
 
 @timeit
-def convert_mrt_mmdb(fname, mrt, asn):
+def convert_mrt_mmdb(fname, mrt, asn, quiet=False):
     """
     Input: Filename of the target mmdb file.
            Dictionary of the prefix->AS_PATH/PREFIX derive from previous mrt file
@@ -192,7 +212,7 @@ def convert_mrt_mmdb(fname, mrt, asn):
     with tqdm(
         desc=f" {message:<40}  ",
         unit=" prefixes",
-        disable=args.quiet,
+        disable=quiet,
     ) as pb:
         for prefix, val in mrt.items():
             try:
@@ -226,10 +246,10 @@ def convert_mrt_mmdb(fname, mrt, asn):
     return missing, count
 
 
-def display_stats(text, stats, logger):
+def display_stats(text, stats, logger, quiet=False):
     """Display length of a list"""
     message = text
-    if not args.quiet:
+    if not quiet:
         logger.warning(f" {message:<40}  : {len(stats)} prefixes")
         logger.debug(f" {stats} ")
 
@@ -278,9 +298,9 @@ def main():
         args.quiet = True
 
     logger.debug(args)
-    asn, asn_stats = make_asn(args.mmdb)
+    asn, asn_stats = make_asn(args.mmdb, args.quiet)
     if os.path.isfile(args.lookup_file):
-        asn_custom, asn_custom_stats = make_asn_custom(args.lookup_file)
+        asn_custom, asn_custom_stats = make_asn_custom(args.lookup_file, args.quiet)
         if args.custom_lookup_only:
             asn = asn_custom
             asn_stats = asn_custom_stats
@@ -288,9 +308,11 @@ def main():
             # merge asn lookup table for combination lookup
             asn.update(asn_custom)
     prefixes_mrt, prefix_stats = load_mrt(args.mrt)
-    missing, convert_stats = convert_mrt_mmdb(args.target, prefixes_mrt, asn)
-    display_stats("Prefixes without description", missing, logger)
-    display_stats("ASN without description", set(missing), logger)
+    missing, convert_stats = convert_mrt_mmdb(
+        args.target, prefixes_mrt, asn, args.quiet
+    )
+    display_stats("Prefixes without description", missing, logger, args.quiet)
+    display_stats("ASN without description", set(missing), logger, args.quiet)
     files_stats = all_files_create([args.mmdb, args.mrt, args.target], logger)
 
     if args.prometheus:

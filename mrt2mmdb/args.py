@@ -160,6 +160,28 @@ def log_level_arg(parser):
     )
 
 
+def compare_routing_arg(parser):
+    """define arguments to be added"""
+    return parser.add_argument(
+        "--compare_routing",
+        metavar="",
+        type=str,
+        nargs="*",
+        help="Compare routing differenceis between [filename1] [filename2] \
+              (both files are in mmdb format)",
+    )
+
+
+def compare_asn_arg(parser):
+    """define arguments to be added"""
+    return parser.add_argument(
+        "--compare_asn",
+        action="store_true",
+        help="Compare the ASN in a mmdb file vs tsv,csv file [filename1] [filename2]",
+        default=False,
+    )
+
+
 def get_args(options):
     """
     Input: keywords boolean of the desire argument

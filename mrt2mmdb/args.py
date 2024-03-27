@@ -172,6 +172,16 @@ def compare_routing_arg(parser):
     )
 
 
+def print_changes_arg(parser):
+    """define arguments to be added"""
+    return parser.add_argument(
+        "--print_changes",
+        action="store_true",
+        help="Print changes when comparing [filename1] [filename2]",
+        default=False,
+    )
+
+
 def compare_asn_arg(parser):
     """define arguments to be added"""
     return parser.add_argument(

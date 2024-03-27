@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mrt2mmdb"
-version = "0.1.2"
+version = "0.1.3"
 authors = [{name="SB", email="seo.boon.ng@gmail.com" }]
 description = "Convert and enrich a mrt file into mmdb"
 readme = "README.md"

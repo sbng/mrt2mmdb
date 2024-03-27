@@ -6,6 +6,7 @@ import sys
 import logging
 import json
 from deepdiff import DeepDiff
+
 from make_mmdb import (
     make_asn_custom,
     make_asn,
@@ -17,11 +18,32 @@ from args import (
     mmdb_arg,
     lookup_file_arg,
     compare_routing_arg,
+    print_changes_arg,
     quiet_arg,
     log_level_arg,
 )
 
+
 # pylint: disable=global-statement
+def compare(dict0, dict1, args, logger):
+    """Compare two dictionaries then print out the statistics
+    if --print_changes is set, output the changes in json format
+    """
+    if args.quiet:
+        freq = 0
+    else:
+        freq = 1
+    diff = DeepDiff(
+        dict0,
+        dict1,
+        log_frequency_in_sec=freq,
+        progress_logger=logger.warning,
+    )
+    for i in (delta := list(diff)):
+        logger.warning(f"{i} = {len(diff[i])}")
+    if args.print_changes and "values_changed" in delta:
+        logger.warning(json.dumps(diff["values_changed"], indent=1))
+    return diff
 
 
 def main():
@@ -35,6 +57,7 @@ def main():
             lookup_file_arg,
             log_level_arg,
             compare_routing_arg,
+            print_changes_arg,
             quiet_arg,
         ]
     )
@@ -53,33 +76,16 @@ def main():
 
     # Turn off progress report in quiet mode
     # Frequency of 0 sec is to supress progress report
-    if args.quiet:
-        freq = 0
-    else:
-        freq = 1
 
     if args.compare_routing is not None and len(args.compare_routing) == 2:
-        routing0, routing_stats = make_routing(args.compare_routing[0], args.quiet)
-        routing1, routing_stats = make_routing(args.compare_routing[1], args.quiet)
-        del routing_stats
-        diff = DeepDiff(
-            routing0,
-            routing1,
-            log_frequency_in_sec=freq,
-            progress_logger=logger.warning,
-        )
-        changes = diff["values_changed"]
-        logger.warning(json.dumps(changes, indent=1))
+        routing0, _ = make_routing(args.compare_routing[0], args.quiet)
+        routing1, _ = make_routing(args.compare_routing[1], args.quiet)
+        compare(routing0, routing1, args, logger)
 
     if args.compare_asn and args.lookup_file != "" and args.mmdb != "":
-        asn0, asn_stats = make_asn(args.mmdb, args.quiet)
-        asn1, asn_stats = make_asn_custom(args.lookup_file, args.quiet)
-        del asn_stats
-        diff = DeepDiff(
-            asn0, asn1, log_frequency_in_sec=freq, progress_logger=logger.warning
-        )
-        changes = diff["values_changed"]
-        logger.warning(json.dumps(changes, indent=1))
+        asn0, _ = make_asn(args.mmdb, args.quiet)
+        asn1, _ = make_asn_custom(args.lookup_file, args.quiet)
+        compare(asn0, asn1, args, logger)
     return 0
 
 

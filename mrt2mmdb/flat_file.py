@@ -7,20 +7,23 @@ import csv
 from tqdm import tqdm
 
 
-def parse_flatfile(fname, quiet):
+def parse_flatfile(fname, logger, quiet):
     """process a csv or tsv file and convert the file into a dictionary for asn lookup"""
     result = {}
+    count = 0
+    message = "Making custom ASN table using lookup file " + fname
+    if fname == "":
+        logger.warning(f" {message:<80}  : skipped")
+        return result, count
     with open(fname, newline="\n", encoding="utf-8") as csvfile:
         dialect = csv.Sniffer().sniff(csvfile.read(1024))
         csvfile.seek(0)
         reader = csv.reader(csvfile, dialect)
-        message = "Making custom ASN table using lookup file"
         with tqdm(
-            desc=f" {message:<40} ",
+            desc=f" {message:<80}  ",
             unit=" prefixes",
             disable=quiet,
         ) as pb:
-            count = 0
             for row in reader:
                 # tsv file missing the country information on the last column
                 # add the country as empty string. csv handle the country correctly
@@ -37,8 +40,7 @@ def main():
     """
     main function test the flat file parsing into a dictionary
     """
-    r = parse_flatfile("data/asn_rir_org_country.csv", False)
-    del r
+    # _ = parse_flatfile("data/asn_rir_org_country.csv")
     return 0
 
 

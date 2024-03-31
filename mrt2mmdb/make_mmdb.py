@@ -4,8 +4,6 @@ This module convert a mrt to mmdb format. This conversion also enrich the
 new mmdb file with network description whereby a more rich and complete
 information can be obtained from a routing prefix.
 """
-import os
-import sys
 import itertools
 import time
 import logging
@@ -31,7 +29,7 @@ from args import (
 )
 from bgpscanner import parse_bgpscanner, sanitize
 from prometheus import output_prometheus
-from file_stats import all_files_create
+from file_stats import all_files_create, arguments_filename
 from flat_file import parse_flatfile
 
 # pylint: disable=global-statement
@@ -61,13 +59,13 @@ def timeit(func):
 
 
 @timeit
-def make_asn_custom(fname, quiet=False):
+def make_asn_custom(fname, logger, quiet=False):
     """Make custom ASN lookup table"""
-    return parse_flatfile(fname, quiet)
+    return parse_flatfile(fname, logger, quiet)
 
 
 @timeit
-def make_asn(fname, quiet=False):
+def make_asn(fname, logger, quiet=False):
     """
     Input:  A complete mmdb file that contains prefixes with ASN and description
     Output: Return a ASN lookup dictionary that provides a description for each ASN
@@ -79,10 +77,13 @@ def make_asn(fname, quiet=False):
     asn = {}
     count = 0
     # Make Maxmind ASN lookup table
-    message = "Making ASN table for description lookup"
+    message = "Making ASN table for description lookup " + fname
+    if fname == "":
+        logger.warning(f" {message: <80}  : skipped")
+        return asn, count
     with maxminddb.open_database(fname, 1) as mreader:
         with tqdm(
-            desc=f" {message:<40}  ",
+            desc=f" {message: <80}  ",
             unit=" prefixes",
             disable=quiet,
         ) as pb:
@@ -174,9 +175,9 @@ def load_mrt(fname):
     """
     num_prefix = args.prefixes
     result = {}
-    message = "Loading mrt data into dictionary"
+    message = "Loading mrt data into dictionary using " + fname
     with tqdm(
-        desc=f" {message:<40}  ",
+        desc=f" {message: <80}  ",
         unit=" prefixes",
         disable=args.quiet,
     ) as pb:
@@ -208,9 +209,9 @@ def convert_mrt_mmdb(fname, mrt, asn, quiet=False):
         ip_version=6, ipv4_compatible=True, database_type=args.database_type
     )
     count = 0
-    message = "Converting mrt into mmda"
+    message = "Converting mrt into mmda " + fname
     with tqdm(
-        desc=f" {message:<40}  ",
+        desc=f" {message: <80}  ",
         unit=" prefixes",
         disable=quiet,
     ) as pb:
@@ -235,9 +236,9 @@ def convert_mrt_mmdb(fname, mrt, asn, quiet=False):
             )
             pb.update(1)
             count += 1
-    message = "Writing mmda file"
+    message = "Writing mmda file " + fname
     with tqdm(
-        desc=f" {message:<40}  ",
+        desc=f" {message: <80}  ",
         unit="",
         disable=args.quiet,
     ) as pb:
@@ -250,7 +251,7 @@ def display_stats(text, stats, logger, quiet=False):
     """Display length of a list"""
     message = text
     if not quiet:
-        logger.warning(f" {message:<40}  : {len(stats)} prefixes")
+        logger.warning(f" {message:<80}  : {len(stats)} prefixes")
         logger.debug(f" {stats} ")
 
 
@@ -287,36 +288,37 @@ def main():
     )
     logger = logging.getLogger(__name__)
 
-    if not (os.path.isfile(args.mrt)) or not os.path.isfile(args.mmdb):
-        print("\nerror: unable to locate mrt/mmdb file\n")
-        parser.print_help(sys.stderr)
-        sys.exit(1)
-    if args.quiet:
-        logging.disable(logging.WARNING)
+    args = arguments_filename(parser, logger)
+
     if args.prometheus:
         # Force quiet mode in order to generate the prometheus output
         args.quiet = True
-
+    if args.quiet:
+        logging.disable(logging.WARNING)
     logger.debug(args)
-    asn, asn_stats = make_asn(args.mmdb, args.quiet)
-    if os.path.isfile(args.lookup_file):
-        asn_custom, asn_custom_stats = make_asn_custom(args.lookup_file, args.quiet)
-        if args.custom_lookup_only:
-            asn = asn_custom
-            asn_stats = asn_custom_stats
-        else:
-            # merge asn lookup table for combination lookup
-            asn.update(asn_custom)
+
+    asn, asn_stats = make_asn(args.mmdb, logger, args.quiet)
+    asn_custom, asn_custom_stats = make_asn_custom(args.lookup_file, logger, args.quiet)
+    if args.custom_lookup_only:
+        asn = asn_custom
+        asn_stats = asn_custom_stats
+    else:
+        # merge asn lookup table for combination lookup
+        asn.update(asn_custom)
     prefixes_mrt, prefix_stats = load_mrt(args.mrt)
     missing, convert_stats = convert_mrt_mmdb(
         args.target, prefixes_mrt, asn, args.quiet
     )
     display_stats("Prefixes without description", missing, logger, args.quiet)
     display_stats("ASN without description", set(missing), logger, args.quiet)
-    files_stats = all_files_create([args.mmdb, args.mrt, args.target], logger)
+    files_stats = all_files_create(
+        [args.mmdb, args.mrt, args.target, args.lookup_file], logger
+    )
 
     if args.prometheus:
-        logger.warning(
+        # print prometheus formatted output by silencing all (disable logging WARNING)
+        # and log the prometheus output as critical event
+        logger.critical(
             output_prometheus(
                 asn_stats, prefix_stats, convert_stats, missing, files_stats
             )

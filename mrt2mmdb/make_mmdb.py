@@ -215,8 +215,9 @@ def convert_mrt_mmdb(fname, mrt, asn, quiet=False):
         unit=" prefixes",
         disable=quiet,
     ) as pb:
-        for prefix, val in mrt.items():
+        for prefix in sorted(mrt.keys(), key=lambda x: IPNetwork(x).size, reverse=True):
             try:
+                val = mrt[prefix]
                 as_num = sanitize(str(val[0][-1]))
                 if as_num in asn:
                     org_desc = asn[as_num]

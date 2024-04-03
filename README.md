@@ -7,7 +7,7 @@ The goal of this project is to generate a mmdb file enriching it with informatio
 
 Maxmind database file offers fast lookup on IP prefixes/IP address and returns the associative values accordingly. 
 
-In this project, the values we stored after conversion from MRT file into a Maxmind database file are Autonomous System Number (ASN), ASPATH and the corresponding description of the ASN. The description of ASN can be obtain from [Maxmind database](https://github.com/P3TERX/GeoLite.mmdb) while the ASPATHH can be obtain from the MRT file. 
+In this project, the values we stored after conversion from MRT file into a Maxmind database file are Autonomous System Number (ASN), ASPATH and the corresponding description of the ASN. The description of ASN can be obtain from [Maxmind database](https://github.com/P3TERX/GeoLite.mmdb) while the ASPATH can be obtain from the MRT file. 
 
 The mmdb file created will be used by other applications for IP address/prefix lookup.
 ## Installation
@@ -172,6 +172,6 @@ mrt2mmdb_template_mmdb_file_creation_timestamp 1712132576
 mrt2mmdb_version 1.0
 ```
 ## Contribution
-Original Idea: John Todd <jtodd at loligo.com>
+Original Idea: John Todd <jtodd>
 
 Author : Seo Boon Ng <seo.boon.ng at gmail.com>

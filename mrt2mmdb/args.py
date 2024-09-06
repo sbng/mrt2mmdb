@@ -117,6 +117,15 @@ def display_arg(parser):
         default=False,
     )
 
+def trim_arg(parser):
+    """define arguments to be added"""
+    return parser.add_argument(
+        "--trim",
+        action="store_true",
+        help="Trim the database",
+        default=False,
+    )
+
 
 def prometheus_arg(parser):
     """define arguments to be added"""

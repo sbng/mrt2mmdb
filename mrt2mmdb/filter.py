@@ -36,7 +36,7 @@ from args import (
 args = {}
 
 class update(Reader, Encoder):
-    _data_start = 0 
+    _data_start = 0  
     _pointer_base = 0
     _data_stop = 0
     _seeker = 0
@@ -112,23 +112,43 @@ class update(Reader, Encoder):
         else:
             return self._buffer[start_marker:end_marker]
 
-    def decode_byte(self, byte_pointer: bytes):
-        # check what type of pointer by extracting first first of the input
-        mask = int('00011000', 2)
-        mask_pointer = int('00000111', 2)
-        cp = byte_pointer[0] & mask
-        
-        if cp == 0:
-            res = ((byte_pointer[0] & mask_pointer) << 8) | byte_pointer[1]
-        if cp == 1:
-            res = ((byte_pointer[0] & mask_pointer) << 16) | (byte_pointer[1] << 8) | byte_pointer[2] + 2048,
-        if cp == 2:
-            res =((byte_pointer[0] & mask_pointer) << 24) | (byte_pointer[1] << 16) | (byte_pointer[2] << 8) | byte_pointer[3]  + 526336,
-        if cp == 3:
-            res = (byte_pointer[1] << 24) | (byte_pointer[2] << 16) | (byte_pointer[3] << 8) | byte_pointer[4],
+def decode_byte(byte_pointer: bytes, reader):
+    # check what type of pointer by extracting first first of the input
+    mask = int('00011000', 2) 
+    mask_pointer = int('00000111', 2)
+    cp = byte_pointer[0] & mask
     
+    print ("byte pointer: ",byte_pointer.hex(), "CP: ",cp)
 
-        return struct.pack('>I', res + self._metadata.node_count + 16)
+    if cp == 0:
+        res = ((byte_pointer[0] & mask_pointer) << 8) | byte_pointer[1]
+    if cp == 1:
+        res = ((byte_pointer[0] & mask_pointer) << 16) | (byte_pointer[1] << 8) | byte_pointer[2] + 2048,
+    if cp == 2:
+        res =((byte_pointer[0] & mask_pointer) << 24) | (byte_pointer[1] << 16) | (byte_pointer[2] << 8) | byte_pointer[3]  + 526336,
+    if cp == 3:
+        res = (byte_pointer[1] << 24) | (byte_pointer[2] << 16) | (byte_pointer[3] << 8) | byte_pointer[4],
+
+    return struct.pack('>I', res + reader._metadata.node_count + 16)
+
+
+def decode_pointer(res, reader):
+    if len(res) == 5:
+        _, pointer = struct.unpack('>BI', res)
+    elif len(res) == 4:
+        b0, b1, b2, b3 = struct.unpack('>BBBB', res)
+        pointer = (b0 & 0x07) << 24 | b1 << 16 | b2 << 8 | b3
+        pointer += 526336
+    elif len(res) == 3:
+        b0, b1, b2 = struct.unpack('>BBB', res)
+        pointer = (b0 & 0x07) << 16 | b1 << 8 | b2
+        pointer += 2048
+    elif len(res) == 2:
+        b0, b1 = struct.unpack('>BB', res)
+        pointer = (b0 & 0x07) << 8 | b1
+    else:
+        raise ValueError("Invalid encoded pointer")
+    return struct.pack('>I', pointer + reader._metadata.node_count + 16)
 
 def filter_dict(raw):
     """
@@ -137,7 +157,7 @@ def filter_dict(raw):
     """
     ignore_keys = ["geoname_id","confidence","organization","accuracy_radius","time_zone","isp","domain","postal","metro_code"]
     ignore_lang = ["de","es","fr","ja","pt-BR","ru","zh-CN"]
-    rem_keys = ignore_keys + ignore_lang
+    rem_keys = ignore_keys + ignore_lang 
     fnc = lambda sub: [
         fnc(item) if isinstance(item, dict) else item
         for item in sub
@@ -149,40 +169,62 @@ def filter_dict(raw):
     }
     return fnc(raw)
 
-def show_db(fname):
+def load_db(fname):
     """
     display and print the entire mmdb
-    Return a list of prefix/dictionaries 
+    Return a list of prefix/dictionaries
+    using python generator
     """
     result = []
     mreader = maxminddb.open_database(fname)
     res = (((prefix.compressed),filter_dict(data)) for prefix, data in mreader)
     mreader.close
-    rewrite(fname, res)
     return (res)
 
 def rewrite(fname, dic_data):
-    with update(fname) as reader:
-        metadata_cache = reader.extract(reader.data_section_stop,0)
-        resolved = reader.data_section_start
+    shutil.copyfile(fname, fname+".trim")
+    fh = open(fname+".trim", 'r+b')
+    with Reader(fname) as reader:
+        metadata = reader.metadata()
+        treesize = int(((metadata.record_size * 2)/8) * metadata.node_count)
+        data_section_start = treesize + 16
+        resolved = data_section_start
+        data_section_end = reader._buffer.rfind(reader._METADATA_START_MARKER, max(0, reader._buffer_size - 128 * 1024))
+        metadata_cache = reader._buffer[data_section_end:]
         encode_record = Encoder(cache=True)
         for prefix,record in dic_data:
             a = prefix.split('/')[0]
             address = bytearray(ipaddress.ip_address(a).packed)
-            ((data_pointer, loc),_) = reader._find_address_in_tree_loc(address)
             pack = encode_record.encode(record)
-            pack_pointer = reader.decode_byte(pack)
+            pack_pointer = decode_pointer(pack, reader)
+            end_marker = resolved + len(encode_record.data_list)
             """
             Update the search tree leaf node with the pointer of the data for this node
-            pointer_loc : Tuple of location of leaf node (loc) and the pointer 
+            using the custom find_address_in_tree_loc function from Decoder module. The 
+            function return -> the address of the location of leaf node. 
+            Result :      Tuple of location of leaf node (loc) and the pointer 
                           (data_pointer) to the data. 
             """
-            reader._fh.seek(loc)
-            reader._fh.write(pack_pointer)
-        pack_list = (b''.join([bytes_obj for bytes_obj in encode_record.data_list]))
-        reader._fh.seek(reader.data_section_start)
-        reader._fh.write(pack_list)
-        reader._fh.write(metadata_cache)
+            ((data_pointer, loc), prefix_length) = reader._find_address_in_tree_loc(address)
+            fh.seek(loc)
+            fh.write(pack_pointer)
+            """
+            write the buf onto the file and clear the encoding data_list in the encoder
+            This will prevent overloading the memory
+            """
+            buff = encode_record.data_list
+            encode_record.data_list = []
+            print (b''.join([bytes_obj for bytes_obj in buff]))
+            fh.seek(resolved)
+            fh.write((b''.join([bytes_obj for bytes_obj in buff])))
+            resolved = end_marker
+
+        #pack_list = (b''.join([bytes_obj for bytes_obj in encode_record.data_list]))
+        #fh.seek(data_section_start)
+        #fh.write(pack_list)
+        fh.seek(resolved)
+        fh.write(metadata_cache)
+    fh.close()
 
 def main():
     """
@@ -195,17 +237,9 @@ def main():
         parser.print_help(sys.stderr)
         sys.exit(1)
 
-    if args.ipaddress != "":
-        print(json.dumps(lookup(args.mmdb, args.ipaddress), indent=1))
-    if args.asn != "":
-        print(json.dumps(lookup_asn(args.mmdb, args.asn), indent=1))
-    if args.display:
-         show_db(args.mmdb)
-    if args.trim:
-         show_db(args.mmdb)
-    if args.show_db_type:
-         print(json.dumps(db_type(args.mmdb), indent=1))
-
-
 if __name__ == "__main__":
     main()
+    fname = args.mmdb
+    db = load_db(fname)
+    rewrite(fname, db)
+    

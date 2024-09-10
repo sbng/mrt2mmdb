@@ -121,8 +121,8 @@ def trim_arg(parser):
     """define arguments to be added"""
     return parser.add_argument(
         "--trim",
-        action="store_true",
-        help="Trim the database",
+        nargs='*',
+        help="Trim the database by providing the key(s) to be removed from the json data",
         default=False,
     )
 

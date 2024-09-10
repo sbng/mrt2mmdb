@@ -84,7 +84,11 @@ def filter_dict(raw):
         "metro_code",
     ]
     ignore_lang = ["de", "es", "fr", "ja", "pt-BR", "ru", "zh-CN"]
-    rem_keys = ignore_keys + ignore_lang
+    if args.trim:
+        rem_keys = ignore_keys + ignore_lang + args.trim
+    else:
+        rem_keys = ignore_keys + ignore_lang
+
     fnc = lambda sub: (
         [
             fnc(item) if isinstance(item, dict) else item
@@ -175,7 +179,7 @@ def main():
     main function for the workflow
     """
     parser = get_args(
-        [mmdb_arg, ipaddress_arg, asn_arg, display_arg, show_db_type_arg, trim_arg]
+        [mmdb_arg,trim_arg]
     )
     global args
     args = parser.parse_args()

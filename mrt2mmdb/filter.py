@@ -10,7 +10,7 @@ import shutil
 
 import maxminddb
 from maxminddb.reader import Reader
-from mmdb_writer import Encoder
+from mmdb_encoder import Encoder
 
 from args import (
     get_args,

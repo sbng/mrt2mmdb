@@ -4,51 +4,31 @@ utility to help lookup on description of network base on IP address or ASN
 """
 import os
 import sys
-import json
-import maxminddb
 import ipaddress
 import struct
 import shutil
-from netaddr import IPSet, IPNetwork
 
-from maxminddb.const import MODE_AUTO, MODE_MMAP, MODE_FILE, MODE_MEMORY, MODE_FD
-from maxminddb.errors import InvalidDatabaseError
-from maxminddb.file import FileBuffer
-from maxminddb.types import Record
-from os import PathLike
-from typing import (
-    Any,
-    AnyStr,
-    IO,
-    Optional,
-    Tuple,
-    Union,
-    cast,
-    Dict,
-    List,
-    Tuple,
-    Union,
-)
-
-from mmdb_writer import Encoder
+import maxminddb
 from maxminddb.reader import Reader
-from maxminddb.decoder import Decoder
+from mmdb_writer import Encoder
 
 from args import (
     get_args,
     mmdb_arg,
-    ipaddress_arg,
-    asn_arg,
-    display_arg,
-    show_db_type_arg,
     trim_arg,
 )
+
 
 # pylint: disable=global-statement
 args = {}
 
 
 def decode_pointer(res, reader):
+    """
+    This function will decode the data section pointer and return a data offset
+    for used in the leaf node. The return needs to be 4 bytes as we are dealing with
+    a 32 bites nodes
+    """
     if len(res) == 5:
         _, pointer = struct.unpack(">BI", res)
     elif len(res) == 4:
@@ -56,7 +36,7 @@ def decode_pointer(res, reader):
         pointer = (b0 & 0x07) << 24 | b1 << 16 | b2 << 8 | b3
         pointer += 526336
     elif len(res) == 3:
-        b0, b1, b2 = struct.unpack(">BBB", res)
+        b0, b1, b2 =  struct.unpack(">BBB", res)
         pointer = (b0 & 0x07) << 16 | b1 << 8 | b2
         pointer += 2048
     elif len(res) == 2:
@@ -65,7 +45,6 @@ def decode_pointer(res, reader):
     else:
         raise ValueError("Invalid encoded pointer")
     return struct.pack(">I", pointer + reader._metadata.node_count + 16)
-
 
 def filter_dict(raw):
     """
@@ -107,9 +86,9 @@ def filter_dict(raw):
 
 def load_db(fname):
     """
-    display and print the entire mmdb
-    Return a list of prefix/dictionaries
-    using python generator
+    Load mmdb file and use it to create a generator expression to
+    avoid loading the entire structure into the memory. This function 
+    will return a list of prefix/dictionaries generator expression
     """
     result = []
     mreader = maxminddb.open_database(fname)
@@ -152,11 +131,9 @@ def rewrite(fname, dic_data):
             Result :      Tuple of location of leaf node (loc) and the pointer 
                           (data_pointer) to the data. 
             """
-            ((data_pointer, loc), prefix_length) = reader._find_address_in_tree_loc(
+            ((_, loc), _) = reader._find_address_in_tree_loc(
                 address
             )
-            ptr = encode_record._encode_pointer(resolved)
-            new_pointer = decode_pointer(ptr, reader)
             fh.seek(loc)
             fh.write(pack_pointer)
             """

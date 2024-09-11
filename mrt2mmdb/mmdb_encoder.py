@@ -1,4 +1,9 @@
 # coding: utf-8
+# This module is a copy of mmdb_writer https://github.com/vimt/MaxMind-DB-Writer-python.git
+# Only the Encoder class were kept as the extra classes are not required for filter.py
+# To avoid conflict with the installed mmdb_writer module, this module is created for the sole
+# need to encode mmdb data.
+ 
 __version__ = "0.1.1"
 
 import logging

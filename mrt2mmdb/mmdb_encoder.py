@@ -8,6 +8,7 @@ import time
 from typing import Union
 
 from netaddr import IPSet, IPNetwork
+from weakref import WeakKeyDictionary
 
 MMDBType = Union[dict, list, str, bytes, int, bool]
 
@@ -172,6 +173,13 @@ class Encoder(object):
                 return 5
         raise TypeError("unknown type {value_type}".format(value_type=value_type))
 
+    def _freeze(self, value):
+        if isinstance(value, dict):
+            return tuple((k, self._freeze(v)) for k, v in value.items())
+        elif isinstance(value, list):
+            return tuple(self._freeze(v) for v in value)
+        return value
+
     def encode_meta(self, meta):
         res = self._make_header(7, len(meta))
         meta_type = {
@@ -191,8 +199,8 @@ class Encoder(object):
     def encode(self, value, type_id=None):
         if self.cache:
             try:
-                if not isinstance(value, (list, dict)):
-                    return self.data_cache[value]
+                cache_key = self._freeze(value)
+                return self.data_cache[cache_key]
             except KeyError:
                 pass
 
@@ -216,10 +224,9 @@ class Encoder(object):
                 pointer_position = self.data_pointer
                 self.data_pointer += len(res)
                 pointer = self.encode(pointer_position, 1)
-                if not isinstance(value, (list, dict)):
-                    self.data_cache[value] = pointer
+                self.data_cache[cache_key] = pointer
                 return pointer
-        return res
+        return res 
 
 
 def bits_rstrip(n, length=None, keep=0):

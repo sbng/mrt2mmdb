@@ -7,7 +7,7 @@ import sys
 import ipaddress
 import struct
 import shutil
-
+from tqdm import tqdm
 import maxminddb
 from maxminddb.reader import Reader
 from mmdb_encoder import Encoder
@@ -16,6 +16,7 @@ from args import (
     get_args,
     mmdb_arg,
     trim_arg,
+    quiet_arg,
 )
 
 
@@ -87,58 +88,58 @@ def load_db(fname):
     return res
 
 
-def rewrite(fname, dic_data):
+def rewrite(fname, dic_data, count):
     shutil.copyfile(fname, fname + ".trim")
-    fh = open(fname + ".trim", "r+b")
-    with Reader(fname) as reader:
-        metadata = reader.metadata()
-        treesize = int(((metadata.record_size * 2) / 8) * metadata.node_count)
-        data_section_start = treesize + 16
-        data_section_end = reader._buffer.rfind(
-            reader._METADATA_START_MARKER, max(0, reader._buffer_size - 128 * 1024)
-        )
-
-        resolved = data_section_start
-        metadata_cache = reader._buffer[data_section_end:]
-        encode_record = Encoder(cache=True)
-        for prefix, record in dic_data:
-            a = prefix.split("/")[0]
-            address = bytearray(ipaddress.ip_address(a).packed)
-            """
-            Encode the dictionary record using the Encode Record Object. Cache is set to
-            True. This ensure that repeated data (strings, float, integers) are referenced 
-            by pointers instead of re-encoding the same data. This save bytes. We also
-            Use the return (data pointer) from the Encode Record Object, for locating the
-            relevent search tree node. We can update the leaf node pointer to this new encoded
-            data as the data had changed.
-            """
-            pack = encode_record.encode(record)
-            pack_pointer = decode_pointer(pack, reader)
-            """
-            Update the search tree leaf node with the pointer of the data for this node
-            using the custom find_address_in_tree_loc function from Decoder module. The 
-            function return -> the address of the location of leaf node. 
-            Result :      Tuple of location of leaf node (loc) and the pointer 
-                          (data_pointer) to the data. 
-            """
-            ((_, loc), _) = reader._find_address_in_tree_loc(
-                address
+    with open(fname + ".trim", "r+b") as fh:
+        with Reader(fname) as reader:
+            metadata = reader.metadata()
+            treesize = int(((metadata.record_size * 2) / 8) * metadata.node_count)
+            data_section_start = treesize + 16
+            data_section_end = reader._buffer.rfind(
+                reader._METADATA_START_MARKER, max(0, reader._buffer_size - 128 * 1024)
             )
-            fh.seek(loc)
-            fh.write(pack_pointer)
-            """
-            extract the data content from the Encoded Record Object. Once extract the required data
-            zero out the data list. This is to ensure the Encoded Record Object remain lean. However,
-            we need to ensure this data is written to the mmdb file.
-            """
-            encode_data = encode_record.data_list
-            data_bytes = b"".join([bytes_obj for bytes_obj in encode_data])
-            fh.seek(resolved)
-            fh.write(data_bytes)
-            resolved += len(data_bytes)
-            encode_record.data_list = []
-        fh.write(metadata_cache)
-    fh.close()
+    
+            resolved = data_section_start
+            metadata_cache = reader._buffer[data_section_end:]
+            encode_record = Encoder(cache=True)
+            for prefix, record in dic_data:
+                a = prefix.split("/")[0]
+                address = bytearray(ipaddress.ip_address(a).packed)
+                """
+                Encode the dictionary record using the Encode Record Object. Cache is set to
+                True. This ensure that repeated data (strings, float, integers) are referenced 
+                by pointers instead of re-encoding the same data. This save bytes. We also
+                Use the return (data pointer) from the Encode Record Object, for locating the
+                relevent search tree node. We can update the leaf node pointer to this new encoded
+                data as the data had changed.
+                """
+                pack = encode_record.encode(record)
+                pack_pointer = decode_pointer(pack, reader)
+                """
+                Update the search tree leaf node with the pointer of the data for this node
+                using the custom find_address_in_tree_loc function from Decoder module. The 
+                function return -> the address of the location of leaf node. 
+                Result :      Tuple of location of leaf node (loc) and the pointer 
+                              (data_pointer) to the data. 
+                """
+                ((_, loc), _) = reader._find_address_in_tree_loc(
+                    address
+                )
+                fh.seek(loc)
+                fh.write(pack_pointer)
+                """
+                extract the data content from the Encoded Record Object. Once extract the required data
+                zero out the data list. This is to ensure the Encoded Record Object remain lean. However,
+                we need to ensure this data is written to the mmdb file.
+                """
+                encode_data = encode_record.data_list
+                data_bytes = b"".join([bytes_obj for bytes_obj in encode_data])
+                fh.seek(resolved)
+                fh.write(data_bytes)
+                resolved += len(data_bytes)
+                encode_record.data_list = []
+                count.update(1)
+            fh.write(metadata_cache)
 
 
 def main():
@@ -146,7 +147,7 @@ def main():
     main function for the workflow
     """
     parser = get_args(
-        [mmdb_arg,trim_arg]
+        [mmdb_arg,trim_arg,quiet_arg]
     )
     global args
     args = parser.parse_args()
@@ -158,5 +159,10 @@ def main():
 if __name__ == "__main__":
     main()
     fname = args.mmdb
-    db = load_db(fname)
-    rewrite(fname, db)
+    with tqdm(
+             desc=f" {'Apply filter to trim mmdb file': <80}  ",
+            unit=" prefixes",
+            disable=args.quiet
+        ) as pb:
+        db = load_db(fname)
+        rewrite(fname, db, pb)

@@ -51,17 +51,7 @@ def filter_dict(raw):
     filter and remove keys from dictionary. The keys to be removed are store in ignore_keys and ignore_lang
     list
     """
-    ignore_keys = [
-        "geoname_id",
-        "confidence",
-        "organization",
-        "accuracy_radius",
-        "time_zone",
-        "isp",
-        "domain",
-        "postal",
-        "metro_code",
-    ]
+    ignore_keys = []
     ignore_lang = ["de", "es", "fr", "ja", "pt-BR", "ru", "zh-CN"]
     if args.trim:
         rem_keys = ignore_keys + ignore_lang + args.trim

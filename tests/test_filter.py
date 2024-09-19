@@ -3,16 +3,16 @@
 source ./assert.sh
 
 # make mmdb file using input json and run filter.py to trim the mmdb
-./mmdbctl import -f json small.json small.mmdb >/dev/null 2>&1
-../mrt2mmdb/filter.py --mmdb small.mmdb --trim `cat ./ignore.list` --quiet
+./mmdbctl import -f json small.json small.mmdb &>/dev/null
+../mrt2mmdb/filter.py --mmdb small.mmdb --trim `cat ./ignore.list` --quiet &>/dev/null
 assert_raises "true"
 
 # make mmdb file using input json and run filter.py to trim the mmdb
 ./mmdbctl import -f json medium.json medium.mmdb >/dev/null 2>&1
-../mrt2mmdb/filter.py --mmdb medium.mmdb --trim `cat ./ignore.list` --quiet
+../mrt2mmdb/filter.py --mmdb medium.mmdb --trim `cat ./ignore.list` --quiet &>/dev/null
 assert_raises "true"
 
-verify_small=$(./mmdbctl export -f json small.mmdb | jq -r '.network,.location.latitude,.location.longitude')
+verify_small=$(./mmdbctl export -f json small.mmdb | jq -r '.network,.location.latitude,.location.longitude') 
 verify_medium=$(./mmdbctl export -f json medium.mmdb | jq -r '.network,.location.latitude,.location.longitude')
 
 

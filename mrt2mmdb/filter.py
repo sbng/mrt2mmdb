@@ -140,6 +140,7 @@ def rewrite(fname, dic_data, count):
                 encode_record.data_list = []
                 count.update(1)
             fh.write(metadata_cache)
+            fh.truncate(fh.tell())
 
 
 def main():

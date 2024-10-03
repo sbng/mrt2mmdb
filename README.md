@@ -56,7 +56,7 @@ $ mrt2mmdb --mrt ../mke-20240329.mrt --mmdb GeoLite2-ASN.mmdb --target target.mm
  ASN without description                                                           : 3 prefixes
 ```
 
-A set of scripts (lookup.py and difference.py) is available for diagnostic purposes. These scripts allow the user to investigate the content of the generated mmdb file to ensure correctness of the data. In the previous mmdb file generated (target.mmdb), the user can investigate the content of target.mmdb 
+A set of scripts (lookup.py, difference.py, filter.py) are available for diagnostic purposes and modification of mmdb file. These scripts allow the user to investigate the content of the generated mmdb file to ensure correctness of the data (lookup.py and difference.py). While filter.py could be use to update and filter keys from existing mmdb file. In the previous mmdb file generated (target.mmdb), the user can investigate the content of target.mmdb 
 
 ```bash
 :$ ./lookup.py --help                                      
@@ -96,7 +96,49 @@ dictionary_item_added = 66861
 dictionary_item_removed = 50
 values_changed = 72540
 ```
+filter.py filter the keys of an existing mmdb file. This will reduce the size and data section of the mmdb file without changing the binary search tree. Essentially it trims the mmdb file and get rid of the specified keys in the data section associated to each prefix.
+```bash
+$ ./filter.py --help                                                                                                                                             [ 3:43PM]
+usage: filter.py [-h] [--mmdb] [--trim [TRIM ...]] [--quiet]
 
+options:
+  -h, --help         show this help message and exit
+  --mmdb             Filename of Maxmind mmdb file for prefixes lookup and return description/ASN
+  --trim [TRIM ...]  Trim the database by providing the key(s) to be removed from the json data
+  --quiet            Turn off verbose (default:verbose)
+
+# Demo. A simple target mmdb file with data section comprising of single key 'network'
+$./lookup.py --mmdb target.mmdb --display
+[
+ [
+  "1.0.0.0/24",
+  {
+   "network": "1.0.0.0/24"
+  }
+ ],
+ [
+  "1.0.1.0/24",
+  {
+   "network": "1.0.1.0/24"
+  }
+ ]
+]
+
+# Remove the 'network' key from the data section while a new mmdb file target.mmdb.trim are generated with the relevant updates and modification. Original mmdb file remain intact.
+$ ./filter.py --mmdb target.mmdb --trim network 
+ Apply filter to trim mmdb file: 2 prefixes [00:00, 4534.38 prefixes/s]
+$ ./lookup.py --mmdb target.mmdb.trim --display 
+[
+ [
+  "1.0.0.0/24",
+  {}
+ ],
+ [
+  "1.0.1.0/24",
+  {}
+ ]
+]
+```
 
 ## Extra Arguments
 

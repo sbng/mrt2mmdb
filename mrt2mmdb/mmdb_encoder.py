@@ -29,7 +29,6 @@ class Encoder(object):
         self.pointer_cache = {}
         self.data_list = []
         self.data_pointer = 0
-
         self.cache = cache
 
     def _encode_pointer(self, value):
@@ -228,7 +227,7 @@ class Encoder(object):
                 self.data_list.append(res)
                 pointer_position = self.data_pointer
                 self.data_pointer += len(res)
-                pointer = self.encode(pointer_position, 1)
+                pointer = self._encode_pointer(pointer_position)
                 self.data_cache[cache_key] = pointer
                 return pointer
         return res 
